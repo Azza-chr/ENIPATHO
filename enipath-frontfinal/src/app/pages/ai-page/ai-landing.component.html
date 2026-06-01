@@ -1,0 +1,159 @@
+<div class="ai-shell">
+
+  <!-- ── Hero ── -->
+  <div class="ai-hero">
+    <div class="ai-hero-inner">
+      <span class="ai-hero-badge">AI-Powered</span>
+      <h1 class="ai-hero-title">Think faster. <span class="ai-hero-accent">Learn smarter.</span></h1>
+      <p class="ai-hero-sub">Ask by voice, scan notes from images, and turn any text into an interactive quiz.</p>
+      <div class="ai-hero-cta">
+        <a href="#ask" class="btn-primary ai-hero-btn">Try Voice Ask</a>
+        <a href="#ocr" class="btn-ghost ai-hero-btn">Scan Image</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 01 Voice Ask ── -->
+  <section id="ask" class="ai-section">
+    <div class="ai-card">
+      <header class="ai-card-header">
+        <h2 class="ai-card-title"><span class="ai-num">01</span> Ask by Voice</h2>
+        <p class="ai-card-desc">Press the mic, speak your question, and get an instant AI answer.</p>
+      </header>
+
+      <div class="ai-mic-row">
+        <button class="ai-mic-btn"
+          [class.ai-mic-btn--active]="speech.listening()"
+          (click)="toggleListening()"
+          [disabled]="!speech.supported() || speech.transcribing()">
+          <span class="ai-mic-dot"></span>
+          <span>{{ speech.listening() ? 'Recording… (click to stop)'
+              : speech.transcribing() ? 'Transcribing…'
+              : 'Start Recording' }}</span>
+        </button>
+
+        <div class="ai-transcript" [class.ai-transcript--busy]="speech.transcribing() || speech.listening()">
+          <ng-container *ngIf="speech.listening()">
+            Enregistrement en cours… cliquez à nouveau pour arrêter.
+          </ng-container>
+          <ng-container *ngIf="speech.transcribing()">
+            Transcription audio en cours…
+          </ng-container>
+          <ng-container *ngIf="!speech.listening() && !speech.transcribing()">
+            {{ speech.transcript() || 'Votre transcription apparaîtra ici…' }}
+          </ng-container>
+        </div>
+      </div>
+
+      <button class="btn-primary ai-submit-btn"
+        (click)="submitSpeech()"
+        [disabled]="speechLoading() || !speech.transcript().trim()">
+        {{ speechLoading() ? 'Réflexion…' : 'Poser la question' }}
+      </button>
+
+      <p class="ai-error" *ngIf="speechError()">{{ speechError() }}</p>
+      <p class="ai-hint" *ngIf="!speech.supported()">
+        L'enregistrement audio n'est pas pris en charge par ce navigateur. Essayez Chrome, Firefox ou Edge.
+      </p>
+
+      <div class="ai-answer" *ngIf="speechAnswer() as a">
+        <div class="ai-answer-label">Réponse</div>
+        <p class="ai-answer-text">{{ a.answer }}</p>
+        <span class="ai-answer-meta">Modèle : {{ a.model }}</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 02 OCR ── -->
+  <section id="ocr" class="ai-section ai-section--alt">
+    <div class="ai-card">
+      <header class="ai-card-header">
+        <h2 class="ai-card-title"><span class="ai-num">02</span> Scanner &amp; Résumer</h2>
+        <p class="ai-card-desc">Importez une image — on extrait le texte et génère des notes de révision.</p>
+      </header>
+
+      <label class="ai-upload">
+        <input type="file" accept="image/*" (change)="onFileSelected($event)" hidden />
+        <ng-container *ngIf="!imagePreview()">
+          <div class="ai-upload-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="3" y="3" width="18" height="18" rx="3"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+          </div>
+          <span class="ai-upload-label">Cliquer pour importer une image</span>
+          <span class="ai-upload-hint">PNG, JPG, WEBP acceptés</span>
+        </ng-container>
+        <img *ngIf="imagePreview() as src" [src]="src" alt="aperçu" class="ai-upload-preview" />
+      </label>
+
+      <button class="btn-primary ai-submit-btn"
+        (click)="submitOcr()"
+        [disabled]="ocrLoading() || !imageFile()">
+        {{ ocrLoading() ? 'Traitement…' : 'Extraire et résumer' }}
+      </button>
+
+      <p class="ai-error" *ngIf="ocrError()">{{ ocrError() }}</p>
+
+      <div class="ai-answer" *ngIf="ocrResult() as r">
+        <div class="ai-answer-label">Texte extrait <span class="ai-answer-meta">({{ r.characterCount }} caractères)</span></div>
+        <pre class="ai-answer-pre">{{ r.extractedText }}</pre>
+        <div class="ai-answer-label" style="margin-top:16px;">Résumé</div>
+        <p class="ai-answer-text">{{ r.summary }}</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 03 Quiz ── -->
+  <section id="quiz" class="ai-section">
+    <div class="ai-card">
+      <header class="ai-card-header">
+        <h2 class="ai-card-title"><span class="ai-num">03</span> Générer un Quiz</h2>
+        <p class="ai-card-desc">Collez n'importe quel texte — obtenez un quiz interactif à choix multiples.</p>
+      </header>
+
+      <textarea class="ai-textarea" rows="6" [(ngModel)]="quizSource"
+        placeholder="Collez ici le texte source…"></textarea>
+
+      <div class="ai-quiz-controls">
+        <label class="ai-quiz-label">
+          <span>Nombre de questions</span>
+          <input class="ai-quiz-num" type="number" min="1" max="20" [(ngModel)]="quizCount" />
+        </label>
+        <button class="btn-primary ai-submit-btn" (click)="submitQuiz()" [disabled]="quizLoading()">
+          {{ quizLoading() ? 'Génération…' : 'Générer le quiz' }}
+        </button>
+      </div>
+
+      <p class="ai-error" *ngIf="quizError()">{{ quizError() }}</p>
+
+      <div class="ai-quiz" *ngIf="quiz() as q">
+        <h3 class="ai-quiz-topic">{{ q.topic }}</h3>
+
+        <div class="ai-question" *ngFor="let question of q.questions; let qi = index">
+          <p class="ai-question-text"><strong>{{ qi + 1 }}.</strong> {{ question.question }}</p>
+          <div class="ai-options">
+            <button *ngFor="let opt of question.options; let oi = index"
+              class="ai-option"
+              [class.ai-option--selected]="selectedAnswers()[qi] === oi"
+              [class.ai-option--correct]="selectedAnswers()[qi] !== undefined && oi === question.correctIndex"
+              [class.ai-option--wrong]="selectedAnswers()[qi] === oi && oi !== question.correctIndex"
+              [disabled]="selectedAnswers()[qi] !== undefined"
+              (click)="pickAnswer(qi, oi)">
+              {{ opt }}
+            </button>
+          </div>
+          <div class="ai-explanation" *ngIf="selectedAnswers()[qi] !== undefined">
+            {{ question.explanation }}
+          </div>
+        </div>
+
+        <div class="ai-score">
+          Score : <strong>{{ score() }} / {{ q.questions.length }}</strong>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>

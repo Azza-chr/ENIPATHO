@@ -1,0 +1,46 @@
+<!-- Role: quiz result summary for students. -->
+<section class="page-shell">
+  <header class="page-head">
+    <div class="page-head__copy">
+      <span class="page-head__eyebrow">Resultat</span>
+      <h1 class="page-head__title">{{ result?.quizTitre || 'Resultat du quiz' }}</h1>
+      <p class="page-head__subtitle">Voici ton score, ton nombre de bonnes reponses et ton statut final.</p>
+    </div>
+  </header>
+
+  <section class="section-block" *ngIf="result; else noResult">
+    <article class="content-card result-card" [class.is-success]="result.passed" [class.is-failure]="!result.passed">
+      <div class="result-card__hero">
+        <span class="result-card__pill">{{ resultLabel }}</span>
+        <h2>{{ result.score }}%</h2>
+      </div>
+
+      <div class="result-grid">
+        <div class="result-box">
+          <strong>Bonnes reponses</strong>
+          <span>{{ result.correctAnswers }}</span>
+        </div>
+        <div class="result-box">
+          <strong>Questions totales</strong>
+          <span>{{ result.totalQuestions }}</span>
+        </div>
+      </div>
+
+      <div class="actions-row">
+        <a class="btn-secondary" routerLink="/etudiant/cours">Retour aux matieres</a>
+        <a class="btn" *ngIf="fromChapitreId" [routerLink]="['/etudiant/chapitres', fromChapitreId, 'quiz']">Repasser le quiz</a>
+        <a class="btn" *ngIf="!fromChapitreId && fromQuizId" [routerLink]="['/etudiant/quizzes', fromQuizId]">Repasser le quiz</a>
+      </div>
+    </article>
+  </section>
+
+  <ng-template #noResult>
+    <div class="state-card">
+      <h3>Aucun resultat disponible</h3>
+      <p>Lance un quiz depuis une matiere pour afficher cette page.</p>
+      <div class="actions-row">
+        <a class="btn" routerLink="/etudiant/cours">Ouvrir l espace etudiant</a>
+      </div>
+    </div>
+  </ng-template>
+</section>

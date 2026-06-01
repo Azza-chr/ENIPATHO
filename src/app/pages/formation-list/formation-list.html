@@ -1,0 +1,57 @@
+<section class="page-shell">
+  <header class="page-head formation-hero">
+    <div class="page-head__copy">
+      <span class="page-head__eyebrow">Formations</span>
+      <h1 class="page-head__title">Choisissez un parcours et avancez module par module</h1>
+      <p class="page-head__subtitle">
+        Un espace clair pour ouvrir une formation, consulter ses modules, suivre les cours et passer les examens lies.
+      </p>
+    </div>
+
+    <div class="formation-hero__panel">
+      <strong>ENI</strong>
+      <span>parcours numeriques</span>
+    </div>
+  </header>
+
+  <div class="state-card" *ngIf="isLoading">
+    <h3>Chargement des formations</h3>
+    <p>Les parcours sont recuperes depuis le backend.</p>
+  </div>
+
+  <div class="state-card" *ngIf="!isLoading && errorMessage">
+    <h3>Formations indisponibles</h3>
+    <p class="error-text">{{ errorMessage }}</p>
+  </div>
+
+  <section class="formations-grid" *ngIf="!isLoading && !errorMessage && formations.length > 0">
+    <article
+      class="formation-card"
+      *ngFor="let formation of formations; let i = index"
+      (click)="voirDetail(formation.idFormation ?? formation.id)"
+    >
+      <div class="formation-card__top">
+        <span class="badge-chip">Parcours {{ i + 1 }}</span>
+        <span class="badge-chip badge-chip--warm">{{ formation.niveau || 'ENIPATH' }}</span>
+      </div>
+
+      <div class="formation-card__icon">{{ (formation.titre || formation.nom || 'F').slice(0, 2).toUpperCase() }}</div>
+
+      <div>
+        <h2>{{ formation.titre || formation.nom || 'Formation ENIPATH' }}</h2>
+        <p>{{ formation.description || 'Parcours structure avec modules, cours et evaluation finale.' }}</p>
+      </div>
+
+      <div class="formation-progress">
+        <span [style.width.%]="getProgress(i)"></span>
+      </div>
+
+      <button class="btn formation-card__button" type="button">Ouvrir la formation</button>
+    </article>
+  </section>
+
+  <div class="state-card" *ngIf="!isLoading && !errorMessage && formations.length === 0">
+    <h3>Aucune formation disponible</h3>
+    <p>Ajoutez des formations dans le backend pour activer cet espace.</p>
+  </div>
+</section>

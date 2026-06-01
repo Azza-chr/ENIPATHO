@@ -1,0 +1,163 @@
+<div class="exam-shell">
+
+  <button class="btn-back" (click)="retour()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+    Retour à la formation
+  </button>
+
+  @if (!termine) {
+
+    @if (isLoading) {
+      <div class="exam-loading">
+        <div class="exam-loading-spinner"></div>
+        <p>Chargement des questions...</p>
+      </div>
+    }
+
+    @if (errorMessage) {
+      <div class="exam-error">{{ errorMessage }}</div>
+    }
+
+    @if (!isLoading && questions.length === 0 && !errorMessage) {
+      <div class="exam-empty">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        <p>Aucune question disponible pour cet examen.</p>
+      </div>
+    }
+
+    @if (!isLoading && questions.length > 0) {
+
+      <!-- Header -->
+      <div class="exam-header">
+        <div class="exam-header-left">
+          <h1 class="exam-title">Examen</h1>
+          <p class="exam-subtitle">Question {{ questionActuelle + 1 }} sur {{ questions.length }}</p>
+        </div>
+        <div class="exam-counter">
+          <strong>{{ answeredCount }}/{{ questions.length }}</strong>
+          <span>répondues</span>
+        </div>
+      </div>
+
+      <!-- Barre de progression -->
+      <div class="exam-progress-bar">
+        <div class="exam-progress-fill" [style.width]="progress + '%'"></div>
+      </div>
+
+      <!-- Question card -->
+      <div class="exam-card">
+        <div class="exam-question">
+          <div class="exam-question-num">{{ questionActuelle + 1 }}</div>
+          <h2 class="exam-question-text">{{ questions[questionActuelle].enonce }}</h2>
+        </div>
+
+        <div class="answer-grid">
+          @for (reponse of getToutesReponses(); track reponse) {
+            <button class="answer-option"
+              [class.is-selected]="reponses[questions[questionActuelle].idQuestion] === reponse"
+              (click)="selectionnerReponse(questions[questionActuelle].idQuestion, reponse)">
+              {{ reponse }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Navigation -->
+      <div class="exam-nav">
+        <button class="btn-nav btn-nav--prev"
+          (click)="questionPrecedente()"
+          [disabled]="questionActuelle === 0"
+          [class.btn-nav--disabled]="questionActuelle === 0">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+          Précédent
+        </button>
+
+        <div class="exam-dots">
+          @for (q of questions; track $index) {
+            <div class="exam-dot"
+              [class.exam-dot--current]="$index === questionActuelle"
+              [class.exam-dot--answered]="reponses[q.idQuestion]">
+            </div>
+          }
+        </div>
+
+        @if (questionActuelle < questions.length - 1) {
+          <button class="btn-nav btn-nav--next" (click)="questionSuivante()">
+            Question suivante
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        } @else {
+          <button class="btn-nav btn-nav--submit"
+            (click)="soumettre()"
+            [class.btn-nav--disabled]="answeredCount < questions.length">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            Soumettre l'examen
+          </button>
+        }
+      </div>
+    }
+
+  } @else {
+
+    <!-- Résultats -->
+    <div class="result-card" [class.result-card--success]="resultat.valide">
+
+      <div class="result-icon" [class.result-icon--success]="resultat.valide">
+        @if (resultat.valide) {
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        } @else {
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        }
+      </div>
+
+      <h2 class="result-title">
+        {{ resultat.valide ? 'Félicitations !' : 'Continuez vos efforts !' }}
+      </h2>
+      <p class="result-message">{{ resultat.message }}</p>
+
+      <div class="result-stats">
+        <div class="result-stat">
+          <strong [class.text-success]="resultat.valide" [class.text-accent]="!resultat.valide">
+            {{ resultat.scoreObtenu }}%
+          </strong>
+          <span>Score obtenu</span>
+        </div>
+        <div class="result-stat">
+          <strong class="text-primary">
+            {{ resultat.bonnesReponses }}/{{ resultat.totalQuestions }}
+          </strong>
+          <span>Bonnes réponses</span>
+        </div>
+        <div class="result-stat">
+          <strong [class.text-success]="resultat.valide" [class.text-danger]="!resultat.valide">
+            {{ resultat.scoreMinimum }}%
+          </strong>
+          <span>Score minimum</span>
+        </div>
+      </div>
+
+      @if (resultat.certification) {
+        <div class="result-cert-box">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/>
+          </svg>
+          {{ resultat.certification }}
+        </div>
+      }
+
+      <div class="result-actions">
+        <button class="btn-secondary" (click)="retour()">
+          Retour à la formation
+        </button>
+        @if (!resultat.valide) {
+          <button class="btn-primary" (click)="recommencer()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 .49-4.7L1 10"/></svg>
+            Repasser l'examen
+          </button>
+        }
+      </div>
+
+    </div>
+  }
+
+</div>

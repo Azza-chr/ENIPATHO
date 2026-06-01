@@ -1,0 +1,64 @@
+<!-- Role: student quiz page for answering questions one by one. -->
+<section class="page-shell">
+  <div class="page-actions">
+    <a class="back-link" routerLink="/etudiant/cours">Retour aux cours</a>
+  </div>
+
+  <header class="page-head">
+    <div class="page-head__copy">
+      <span class="page-head__eyebrow">Quiz</span>
+      <h1 class="page-head__title">{{ quiz?.titre || 'Evaluation du cours' }}</h1>
+      <p class="page-head__subtitle">
+        Reponds aux questions une par une, valide ton choix puis envoie le quiz pour afficher le resultat.
+      </p>
+    </div>
+
+    <div class="meta-row" *ngIf="quiz">
+      <span class="meta-chip">{{ progressLabel }}</span>
+      <span class="meta-chip">{{ quiz.durationMinutes || 0 }} min</span>
+      <span class="meta-chip">Seuil {{ quiz.seuilReussite }}%</span>
+    </div>
+  </header>
+
+  <div class="state-card" *ngIf="isLoading">
+    <h3>Preparation du quiz</h3>
+    <p>Les questions sont en cours de chargement.</p>
+  </div>
+
+  <div class="state-card" *ngIf="!isLoading && errorMessage && !quiz">
+    <h3>Quiz indisponible</h3>
+    <p class="error-text">{{ errorMessage }}</p>
+  </div>
+
+  <article class="content-card quiz-card" *ngIf="!isLoading && quiz && currentQuestion as question">
+    <div class="quiz-card__header">
+      <div>
+        <p class="quiz-card__step">Question {{ currentIndex + 1 }}</p>
+        <h2>{{ question.label }}</h2>
+      </div>
+      <span class="quiz-card__progress">{{ progressLabel }}</span>
+    </div>
+
+    <div class="answer-list">
+      <label class="answer-card" *ngFor="let option of question.options" [class.is-selected]="selectedAnswers[question.id] === option.id">
+        <input
+          type="radio"
+          [name]="'question-' + question.id"
+          [value]="option.id"
+          [ngModel]="selectedAnswers[question.id]"
+          (ngModelChange)="selectAnswer(question.id, $event)"
+        />
+        <span>{{ option.label }}</span>
+      </label>
+    </div>
+
+    <p class="hint-text" *ngIf="question.explication">Explication prevue apres la correction : {{ question.explication }}</p>
+    <p class="error-text" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+    <div class="actions-row">
+      <button class="btn" type="button" [disabled]="isSubmitting" (click)="goToNext()">
+        {{ currentIndex === quiz.questions.length - 1 ? (isSubmitting ? 'Envoi...' : 'Terminer le quiz') : 'Question suivante' }}
+      </button>
+    </div>
+  </article>
+</section>

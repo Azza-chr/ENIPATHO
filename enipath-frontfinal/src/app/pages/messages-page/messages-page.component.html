@@ -1,0 +1,82 @@
+<section class="page-shell messenger-layout">
+  <header class="page-head">
+    <div class="page-head__copy">
+      <span class="page-head__eyebrow">Messages</span>
+      <h1 class="page-head__title">
+        {{ session?.role === 'chef-departement' ? 'Conversations etudiants' : 'Conversation avec le chef de departement' }}
+      </h1>
+      <p class="page-head__subtitle">
+        Echangez rapidement autour des cours, des reclamations et du suivi pedagogique.
+      </p>
+    </div>
+  </header>
+
+  <div class="messenger-container glass-panel" [class.has-sidebar]="session?.role === 'chef-departement'">
+    <aside class="messenger-sidebar" *ngIf="session?.role === 'chef-departement'">
+      <div class="sidebar-head">
+        <strong>Etudiants</strong>
+        <span>{{ departmentContacts.length }} contact(s)</span>
+      </div>
+
+      <button
+        class="contact-row"
+        type="button"
+        *ngFor="let contact of departmentContacts"
+        [class.is-active]="contact.key === selectedContactKey"
+        (click)="selectContact(contact.key)"
+      >
+        <span class="messenger-avatar">{{ contact.initials }}</span>
+        <span class="contact-copy">
+          <strong>{{ contact.name }}</strong>
+          <small>{{ contact.subtitle }}</small>
+          <em>{{ contact.lastActivityLabel }}</em>
+        </span>
+        <span class="unread-dot" *ngIf="contact.unread" aria-label="Nouveau message"></span>
+      </button>
+    </aside>
+
+    <div class="messenger-main">
+      <header class="messenger-header">
+        <div class="messenger-user-info">
+          <div class="messenger-avatar">{{ activeContact.initials }}</div>
+          <div>
+            <h2>{{ activeContact.name }}</h2>
+            <span class="status-online">{{ activeContact.subtitle }}</span>
+          </div>
+        </div>
+      </header>
+
+      <div class="messenger-chat-area">
+        <div class="empty-chat" *ngIf="messages.length === 0">
+          <strong>Aucun message dans cette conversation</strong>
+          <span>Envoyez le premier message pour ouvrir le fil.</span>
+        </div>
+
+        <div
+          class="message-wrapper"
+          *ngFor="let message of messages"
+          [class.is-own]="message.fromRole === session?.role"
+        >
+          <div class="message-bubble">
+            <strong class="message-author">{{ message.fromName }}</strong>
+            <p>{{ message.body }}</p>
+            <span class="message-time">{{ formatDate(message.createdAt) }}</span>
+          </div>
+        </div>
+      </div>
+
+      <form class="messenger-input-area" [formGroup]="form" (ngSubmit)="send()">
+        <input type="hidden" formControlName="toRole" />
+        <input type="hidden" formControlName="subject" />
+
+        <input class="chat-input" formControlName="body" placeholder="Ecrivez un message..." autocomplete="off" />
+        <button class="btn-send" type="submit" [disabled]="!form.get('body')?.value" aria-label="Envoyer">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </form>
+    </div>
+  </div>
+</section>

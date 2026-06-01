@@ -1,0 +1,40 @@
+/* Role: styling for reusable future-ready feature pages. */
+.dashboard-stat-grid,
+.feed-grid {
+  display: grid;
+  gap: 18px;
+}
+
+.dashboard-stat-grid {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.feed-grid {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.stat-card span,
+.stat-card strong,
+.stat-card p,
+.feed-card strong,
+.feed-card p,
+.feed-card span {
+  display: block;
+}
+
+.stat-card span,
+.feed-card span {
+  color: var(--muted-color);
+}
+
+.stat-card strong {
+  margin-top: 14px;
+  font-size: 2.4rem;
+}
+
+.stat-card p,
+.feed-card p {
+  margin: 10px 0 0;
+  color: var(--muted-color);
+  line-height: 1.7;
+}

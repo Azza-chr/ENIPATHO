@@ -1,0 +1,235 @@
+<div class="page-container">
+
+  @if (formation) {
+
+    <button class="btn-back" (click)="retour()">
+      ← Retour aux formations
+    </button>
+
+    <!-- ROADMAP CARD -->
+    <div class="card roadmap-card">
+      <div class="roadmap-header">
+        <h2 class="roadmap-title">Parcours — {{ formation.titre }}</h2>
+        @if (formation.roadmapImageUrl) {
+          <button class="btn-sm" (click)="ouvrirModal()">Voir en plein écran</button>
+        }
+      </div>
+
+      @if (formation.roadmapImageUrl) {
+        <div class="roadmap-preview" (click)="ouvrirModal()">
+          <img [src]="formation.roadmapImageUrl" alt="Roadmap {{ formation.titre }}" />
+          <div class="roadmap-overlay" (click)="ouvrirModal()">
+            <span class="roadmap-overlay-text">Cliquez pour voir la roadmap complète</span>
+          </div>
+        </div>
+      } @else {
+        <div class="roadmap-steps">
+          @for (module of modules; track module.idModule; let last = $last) {
+            <div class="step-item">
+              <div class="step-node" [class.step-node--validated]="estModuleValide(module.idModule)">
+                {{ estModuleValide(module.idModule) ? '✓' : module.ordre }}
+              </div>
+              <div class="step-label">{{ module.titre }}</div>
+            </div>
+            @if (!last) {
+              <div class="step-connector"></div>
+            }
+            @if (last && formation.examenFinal) {
+              <div class="step-connector step-connector--gold"></div>
+              <div class="step-item">
+                <div class="step-node step-node--final">F</div>
+                <div class="step-label step-label--final">Examen Final</div>
+              </div>
+            }
+          }
+        </div>
+      }
+    </div>
+
+    <!-- MAIN GRID -->
+    <div class="detail-grid">
+
+      <!-- Colonne gauche -->
+      <div class="detail-main">
+
+        <div class="badges-row">
+          <span class="badge badge-orange">{{ formation.domaine }}</span>
+          <span class="badge badge-blue">{{ formation.niveau }}</span>
+        </div>
+
+        <h1 class="formation-title">{{ formation.titre }}</h1>
+        <p class="formation-desc">{{ formation.description }}</p>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value">{{ formation.duree }}h</div>
+            <div class="stat-label">Durée totale</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">{{ formation.scoreMin }}%</div>
+            <div class="stat-label">Score minimum</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">{{ modules.length }}</div>
+            <div class="stat-label">Modules</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value stat-cert-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/>
+              </svg>
+            </div>
+            <div class="stat-label">Certification</div>
+          </div>
+        </div>
+
+        <!-- Modules -->
+        <h2 class="section-heading">Contenu de la formation</h2>
+
+        @if (modules.length === 0) {
+          <div class="card empty-card">
+            <p>Les modules seront disponibles prochainement.</p>
+          </div>
+        }
+
+        @for (module of modules; track module.idModule) {
+          <div class="module-card" [class.module-card--validated]="estModuleValide(module.idModule)">
+            <div class="module-header">
+              <div class="module-left">
+                <div class="module-num" [class.module-num--validated]="estModuleValide(module.idModule)">
+                  {{ estModuleValide(module.idModule) ? '✓' : module.ordre }}
+                </div>
+                <h3 class="module-title">{{ module.titre }}</h3>
+              </div>
+              <div class="module-badges">
+                @if (estModuleValide(module.idModule)) {
+                  <span class="badge-validated">Validé</span>
+                }
+                <span class="badge badge-blue">Module {{ module.ordre }}</span>
+              </div>
+            </div>
+
+            <div class="module-actions">
+              <button class="btn-primary" (click)="allerAuCours(module.idModule)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                  <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                </svg>
+                Voir les cours
+              </button>
+              @if (module.examen) {
+                @if (!estModuleValide(module.idModule)) {
+                  <button class="btn-secondary" (click)="passerExamen(module.examen.idQuizz)">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M9 11l3 3L22 4"/>
+                      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                    </svg>
+                    Passer l'examen
+                  </button>
+                } @else {
+                  <button class="btn-ghost" (click)="passerExamen(module.examen.idQuizz)">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M1 4v6h6"/>
+                      <path d="M3.51 15a9 9 0 1 0 .49-4.7L1 10"/>
+                    </svg>
+                    Repasser
+                  </button>
+                }
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Examen final -->
+        @if (formation.examenFinal) {
+          <div class="examen-final-card">
+            <div class="examen-final-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="8" r="6"/>
+                <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/>
+              </svg>
+            </div>
+            <div class="examen-final-body">
+              <h3>Examen Final</h3>
+              <p>Validez toute la formation et obtenez votre certification</p>
+            </div>
+            <button class="btn-primary" (click)="passerExamenFinal()">
+              Passer l'examen final →
+            </button>
+          </div>
+        }
+
+      </div>
+
+      <!-- Colonne droite -->
+      <div class="detail-sidebar">
+        <div class="card sidebar-card">
+          <h3 class="sidebar-title">Ce que vous allez apprendre</h3>
+          <ul class="learn-list">
+            <li>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Concepts fondamentaux
+            </li>
+            <li>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Cours texte structurés
+            </li>
+            <li>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Examens par module
+            </li>
+            <li>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Examen final
+            </li>
+            <li>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Badge + Certification PDF
+            </li>
+            <li>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Tentatives illimitées
+            </li>
+          </ul>
+
+          <hr class="sidebar-divider" />
+
+          <div class="sidebar-cert">
+            <div class="sidebar-cert-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="12" cy="8" r="6"/>
+                <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/>
+              </svg>
+            </div>
+            <p>Obtenez votre certification et préparez-vous aux grandes plateformes comme Coursera, Udemy, NVIDIA...</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  }
+
+</div>
+
+<!-- MODAL ROADMAP -->
+@if (modalOuvert) {
+  <div class="modal-roadmap" (click)="fermerModal()">
+    <div class="modal-roadmap-toolbar" (click)="$event.stopPropagation()">
+      <span class="modal-roadmap-title">{{ formation.titre }}</span>
+      <div class="modal-roadmap-controls">
+        <button (click)="zoomOut()">−</button>
+        <span (click)="resetZoom()">{{ (zoomLevel * 100).toFixed(0) }}%</span>
+        <button (click)="zoomIn()">+</button>
+        <button class="modal-close-btn" (click)="fermerModal()">✕</button>
+      </div>
+    </div>
+    <div class="modal-roadmap-body" (click)="$event.stopPropagation()">
+      <img [src]="formation.roadmapImageUrl"
+        [style.transform]="'scale(' + zoomLevel + ')'"
+        style="transform-origin: top center; transition: transform 0.2s ease; max-width: 1200px; width: 100%;"
+        alt="Roadmap {{ formation.titre }}" />
+    </div>
+    <div class="modal-roadmap-hint">Cliquez en dehors pour fermer &nbsp;•&nbsp; + / − pour zoomer</div>
+  </div>
+}

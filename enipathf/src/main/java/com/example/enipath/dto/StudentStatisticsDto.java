@@ -1,0 +1,23 @@
+package com.example.enipath.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class StudentStatisticsDto {
+    private Long studentId;
+    private String studentName;
+    private String studentEmail;
+    private Integer niveau;
+    private Character groupe;
+    private int totalBadges;
+    private int score;
+    private int attendance; // pourcentage
+    private double moyenneEvaluations;
+    private String status; // ACTIF, ABSENT, RETARD
+}

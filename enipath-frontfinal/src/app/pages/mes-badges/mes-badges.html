@@ -1,0 +1,68 @@
+<div class="badges-shell">
+
+  <header class="page-head library-hero">
+    <div class="page-head__copy">
+      <span class="page-head__eyebrow">Accomplissements</span>
+      <h1 class="page-head__title">Mes Badges</h1>
+      <p class="page-head__subtitle">Vos accomplissements et récompenses obtenus</p>
+    </div>
+  </header>
+
+  @if (badges.length === 0) {
+    <div class="badges-empty">
+      <div class="badges-empty-icon">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M12 8v4l3 3"/>
+        </svg>
+      </div>
+      <h3>Aucun badge encore</h3>
+      <p>Complétez des formations et passez des examens pour obtenir vos premiers badges.</p>
+    </div>
+  }
+
+  <div class="badges-grid">
+    @for (badge of badges; track badge.idBadge) {
+      <div class="badge-card">
+        <div class="badge-card-icon-wrap">
+          <div class="badge-card-icon" [style.background]="getBadgeBg(badge.type)" [style.borderColor]="getBadgeBorder(badge.type)" [style.color]="getTypeBadgeColor(badge.type)">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/>
+            </svg>
+          </div>
+        </div>
+        <div class="badge-card-type-row">
+          <span class="badge-card-type" [style.background]="getBadgeBg(badge.type)" [style.color]="getTypeBadgeColor(badge.type)" [style.borderColor]="getBadgeBorder(badge.type)">
+            {{ badge.type }}
+          </span>
+        </div>
+        <h3 class="badge-card-title">{{ badge.nomBadge }}</h3>
+        <p class="badge-card-desc">{{ badge.description }}</p>
+        <div class="badge-card-footer">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          {{ badge.dateObtention | date:'dd/MM/yyyy' }}
+        </div>
+      </div>
+    }
+  </div>
+
+  @if (badges.length > 0) {
+    <div class="badges-summary">
+      <div class="badges-summary-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/>
+        </svg>
+      </div>
+      <div class="badges-summary-body">
+        <strong>{{ badges.length }} badge(s) obtenu(s)</strong>
+        <p>Continuez à progresser pour débloquer plus de badges et certifications.</p>
+      </div>
+    </div>
+  }
+
+</div>

@@ -1,0 +1,72 @@
+<section class="page-shell">
+  <header class="page-head about-head">
+    <div class="page-head__copy">
+      <span class="page-head__eyebrow">A propos</span>
+      <h1 class="page-head__title">ENIPATH, une plateforme academique claire, tunisienne et connectee</h1>
+      <p class="page-head__subtitle">
+        L'application rassemble les cours, quiz, annonces, messages et espaces de profil dans une experience unique
+        pour les etudiants, les enseignants et les chefs de departement. Elle a ete pensee pour l'ENIPath avec des
+        donnees compatibles avec votre base MySQL et des parcours simples a utiliser au quotidien.
+      </p>
+    </div>
+  </header>
+
+  <section class="about-grid">
+    <article class="section-card">
+      <h2 class="section-title">Notre objectif</h2>
+      <p>
+        Simplifier le suivi pedagogique au quotidien : l'etudiant retrouve ses matieres par semestre, consulte les
+        supports PDF, passe les quiz et garde un profil personnel propre. L'enseignant publie ses cours, prepare ses
+        quiz et communique avec le departement. Le chef de departement suit les echanges importants et centralise les
+        reclamations techniques.
+      </p>
+    </article>
+
+    <article class="section-card">
+      <h2 class="section-title">Ce que l'app couvre</h2>
+      <div class="feature-list">
+        <span>Cours PDF classes par semestre</span>
+        <span>Quiz lies aux chapitres</span>
+        <span>Profils enrichis pour tous les roles</span>
+        <span>Messagerie chef - etudiants</span>
+        <span>Annonces ciblees</span>
+        <span>Reclamations techniques</span>
+      </div>
+    </article>
+  </section>
+
+  <section class="section-card section-block app-story">
+    <div>
+      <h2 class="section-title">Une experience adaptee a la base ENIPATH</h2>
+      <p class="section-subtitle">
+        Les tables utilisateur, etudiant, enseignant, chef_departement, matiere, groupe et contenu academique peuvent
+        alimenter les ecrans sans changer la logique de navigation.
+      </p>
+    </div>
+    <div class="story-steps">
+      <span>1. Connexion par role</span>
+      <span>2. Navigation allgee</span>
+      <span>3. Contenus academiques</span>
+      <span>4. Support et communication</span>
+    </div>
+  </section>
+
+  <section class="section-card section-block">
+    <div class="section-heading">
+      <h2 class="section-title">Equipe</h2>
+      <p class="section-subtitle">Les personnes derriere la conception, le developpement et l'amelioration de cette version.</p>
+    </div>
+
+    <div class="team-grid">
+      <article class="team-card" *ngFor="let member of team">
+        <div class="team-photo">
+          <img [src]="member.photo" [alt]="member.name" />
+        </div>
+        <div>
+          <strong>{{ member.name }}</strong>
+          <span>{{ member.role }}</span>
+        </div>
+      </article>
+    </div>
+  </section>
+</section>

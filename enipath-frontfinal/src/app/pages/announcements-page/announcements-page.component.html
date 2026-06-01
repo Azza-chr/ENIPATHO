@@ -1,0 +1,104 @@
+<section class="page-shell">
+  <header class="page-head">
+    <div class="page-head__copy">
+      <span class="page-head__eyebrow">Annonces</span>
+      <h1 class="page-head__title">Communication académique claire et centralisée</h1>
+      <p class="page-head__subtitle">
+        Publiez les informations importantes et suivez les annonces visibles par chaque espace.
+      </p>
+    </div>
+  </header>
+
+  <section class="communication-layout">
+
+    <!-- Formulaire publication (enseignant / chef de département) -->
+    <article class="section-card composer-card" *ngIf="canPublish">
+      <h2 class="section-title">Nouvelle annonce</h2>
+      <p class="section-subtitle">Choisissez le public cible et publiez une information visible immédiatement.</p>
+
+      <form class="communication-form" [formGroup]="form" (ngSubmit)="publish()">
+        <div class="field-group">
+          <label for="announcement-title">Titre</label>
+          <input id="announcement-title" class="input-field" formControlName="title"
+                 placeholder="Examen, cours, planning..." />
+        </div>
+
+        <div class="form-grid">
+          <div class="field-group">
+            <label for="announcement-audience">Public</label>
+            <select id="announcement-audience" class="select-field" formControlName="audience">
+              <option *ngFor="let option of audienceOptions" [ngValue]="option.value">{{ option.label }}</option>
+            </select>
+          </div>
+
+          <div class="field-group">
+            <label for="announcement-priority">Priorité</label>
+            <select id="announcement-priority" class="select-field" formControlName="priority">
+              <option value="normal">Normale</option>
+              <option value="important">Importante</option>
+              <option value="urgent">Urgente</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label for="announcement-body">Message</label>
+          <textarea id="announcement-body" class="textarea-field" formControlName="body"
+                    placeholder="Rédigez l'annonce..."></textarea>
+        </div>
+
+        <button class="btn" type="submit">Publier l'annonce</button>
+        <p class="success-text" *ngIf="successMessage">{{ successMessage }}</p>
+      </form>
+    </article>
+
+    <!-- Fil des annonces -->
+    <article class="section-card feed-card">
+      <div class="section-heading">
+        <div>
+          <h2 class="section-title">Fil des annonces</h2>
+          <p class="section-subtitle">{{ announcements.length }} message(s) disponible(s)</p>
+        </div>
+      </div>
+
+      <!-- Loading -->
+      <div class="state-card" *ngIf="isLoading">
+        <p>Chargement des annonces...</p>
+      </div>
+
+      <!-- Liste vide -->
+      <div class="empty-state" *ngIf="!isLoading && announcements.length === 0">
+        <p>Aucune annonce, notification ou message reçu pour le moment.</p>
+      </div>
+
+      <!-- Items -->
+      <div class="announcement-list" *ngIf="!isLoading && announcements.length > 0">
+        <article class="announcement-item"
+                 *ngFor="let item of announcements"
+                 [class.is-urgent]="item.priority === 'urgent'"
+                 [class.is-important]="item.priority === 'important'">
+
+          <div class="announcement-item__head">
+            <div class="announcement-item__title-row">
+              <span [class]="'tag-badge ' + tagClass(item.tag)">{{ tagLabel(item.tag) }}</span>
+              <strong>
+                {{ item.title }}
+                <span class="new-badge" *ngIf="isNew(item)">Nouveau</span>
+              </strong>
+            </div>
+            <span class="audience-chip">{{ audienceLabel(item.audience) }}</span>
+          </div>
+
+          <p>{{ item.body }}</p>
+
+          <div class="announcement-meta">
+            <span>{{ item.authorName }}</span>
+            <span>{{ formatDate(item.createdAt) }}</span>
+            <span class="priority-chip priority-{{ item.priority }}">{{ item.priority }}</span>
+          </div>
+        </article>
+      </div>
+    </article>
+
+  </section>
+</section>

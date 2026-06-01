@@ -1,0 +1,119 @@
+<section class="page-shell">
+  <header class="page-head">
+    <div class="page-head__copy">
+      <span class="page-head__eyebrow">{{ isStatisticsView ? 'Statistiques enseignant' : 'Dashboard enseignant' }}</span>
+      <h1 class="page-head__title">
+        {{ isStatisticsView ? 'Suivi individuel des etudiants' : 'Bonjour ' + (session?.fullName || 'Professeur') }}
+      </h1>
+      <p class="page-head__subtitle">
+        {{ isStatisticsView
+          ? 'Analysez les cours, quiz et futurs formulaires par etudiant.'
+          : 'Pilotez vos publications, les annonces recentes et les actions pedagogiques du jour.' }}
+      </p>
+    </div>
+  </header>
+
+  <div class="state-card glass-panel" *ngIf="isLoading">
+    <h3>Chargement</h3>
+    <p>Les donnees enseignantes se synchronisent...</p>
+  </div>
+
+  <ng-container *ngIf="overview as data">
+    <section class="dashboard-stat-grid">
+      <article class="content-card stat-card glass-panel" *ngFor="let stat of data.stats">
+        <span>{{ stat.label }}</span>
+        <strong>{{ stat.value }}</strong>
+        <p>{{ stat.detail }}</p>
+      </article>
+    </section>
+
+    <ng-container *ngIf="!isStatisticsView">
+      <section class="dashboard-grid">
+        <article class="section-card glass-panel">
+          <h2 class="section-title">Publications recentes</h2>
+          <div class="feed-list">
+            <div class="feed-item" *ngFor="let item of data.publications">
+              <strong>{{ item.title }}</strong>
+              <p>{{ item.description }}</p>
+              <span>{{ item.meta }}</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="section-card glass-panel">
+          <h2 class="section-title">Fil des annonces</h2>
+          <p class="section-subtitle">Toute nouvelle annonce apparait ici.</p>
+          <div class="feed-list feed-list--scroll">
+            <div class="feed-item" *ngFor="let item of data.announcements">
+              <strong>
+                {{ item.title }}
+                <span class="new-badge" *ngIf="item.isNew">Nouveau</span>
+              </strong>
+              <p>{{ item.description }}</p>
+              <span>{{ item.meta }}</span>
+            </div>
+          </div>
+        </article>
+      </section>
+    </ng-container>
+
+    <ng-container *ngIf="isStatisticsView">
+      <app-dashboard-charts [charts]="data.charts" />
+
+      <section class="dashboard-grid dashboard-grid--single">
+        <article class="section-card glass-panel">
+          <h2 class="section-title">Avancement par etudiant</h2>
+          <p class="section-subtitle" *ngIf="data.studentStats.length === 0">
+            Les statistiques individuelles apparaitront ici.
+          </p>
+          <div class="progress-list" *ngIf="data.learnerProgress.length > 0">
+            <div class="progress-item" *ngFor="let item of data.learnerProgress">
+              <div class="progress-item__head">
+                <strong>{{ item.label }}</strong>
+                <span>{{ item.progress }}%</span>
+              </div>
+              <div class="progress-item__track">
+                <span [style.width.%]="item.progress"></span>
+              </div>
+              <small>{{ item.detail }}</small>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section class="section-card glass-panel section-block" *ngIf="data.studentStats.length > 0">
+        <h2 class="section-title">Statistiques par etudiant</h2>
+        <div class="student-stat-grid">
+          <article class="student-stat-card" *ngFor="let student of data.studentStats">
+            <div>
+              <strong>{{ student.fullName }}</strong>
+              <span>{{ student.email || 'Email non renseigne' }}</span>
+            </div>
+            <dl>
+              <div>
+                <dt>Groupe</dt>
+                <dd>Niveau {{ student.niveau || '-' }} - {{ student.grp || '-' }}</dd>
+              </div>
+              <div>
+                <dt>Cours</dt>
+                <dd>{{ student.completedQuizzes }} activite(s)</dd>
+              </div>
+              <div>
+                <dt>Quiz</dt>
+                <dd>{{ student.passedQuizzes }}/{{ student.completedQuizzes }}</dd>
+              </div>
+              <div>
+                <dt>Formulaires</dt>
+                <dd>Bientot</dd>
+              </div>
+              <div>
+                <dt>Score moyen</dt>
+                <dd>{{ student.averageScore }}%</dd>
+              </div>
+            </dl>
+          </article>
+        </div>
+      </section>
+    </ng-container>
+  </ng-container>
+</section>

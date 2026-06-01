@@ -1,0 +1,115 @@
+<section class="page-shell formation-detail">
+  <button class="btn-secondary back-button" type="button" (click)="retour()">Retour aux formations</button>
+
+  @if (isLoading) {
+    <div class="state-card">
+      <h3>Chargement du parcours</h3>
+      <p>Preparation des modules et examens.</p>
+    </div>
+  }
+
+  @if (!isLoading && errorMessage) {
+    <div class="state-card">
+      <h3>Parcours indisponible</h3>
+      <p class="error-text">{{ errorMessage }}</p>
+    </div>
+  }
+
+  @if (!isLoading && formation) {
+    <header class="detail-hero">
+      <div>
+        <div class="detail-hero__badges">
+          <span class="badge-chip badge-chip--warm">{{ formation.domaine }}</span>
+          <span class="badge-chip">{{ formation.niveau }}</span>
+        </div>
+        <h1>{{ formation.titre }}</h1>
+        <p>{{ formation.description }}</p>
+      </div>
+
+      <aside class="detail-hero__card">
+        <span>Eligibilite certification</span>
+        <strong>{{ formation.scoreMin || 80 }}%</strong>
+        <p>Validez les modules puis l'examen final pour generer le certificat.</p>
+      </aside>
+    </header>
+
+    <section class="detail-grid">
+      <main class="detail-main">
+        <div class="detail-stats">
+          <article>
+            <strong>{{ formation.duree }}h</strong>
+            <span>Duree totale</span>
+          </article>
+          <article>
+            <strong>{{ modules.length }}</strong>
+            <span>Modules</span>
+          </article>
+          <article>
+            <strong>Badge</strong>
+            <span>Automatique</span>
+          </article>
+        </div>
+
+        <section class="section-card module-section">
+          <div class="section-heading">
+            <h2 class="section-title">Contenu de la formation</h2>
+            <p class="section-subtitle">Chaque module peut contenir des cours et un examen de validation.</p>
+          </div>
+
+          @if (modules.length === 0) {
+            <div class="empty-module">
+              <h3>Les modules seront disponibles prochainement</h3>
+              <p>Ajoutez des modules en base pour activer le parcours.</p>
+            </div>
+          }
+
+          <div class="module-list">
+            @for (module of modules; track module.idModule) {
+              <article class="module-card">
+                <div class="module-card__number">{{ module.ordre }}</div>
+                <div class="module-card__body">
+                  <span>Module {{ module.ordre }}</span>
+                  <h3>{{ module.titre }}</h3>
+                  <p>Cours structures, progression suivie et evaluation associee.</p>
+                  <div class="module-card__actions">
+                    <button class="btn" type="button" (click)="allerAuCours(module.idModule)">Voir les cours</button>
+                    @if (module.examen) {
+                      <button class="btn-secondary" type="button" (click)="passerExamen(module.examen.idQuizz)">
+                        Passer l'examen
+                      </button>
+                    }
+                  </div>
+                </div>
+              </article>
+            }
+          </div>
+        </section>
+
+        @if (formation.examenFinal) {
+          <section class="final-exam">
+            <div>
+              <span class="badge-chip badge-chip--warm">Examen final</span>
+              <h2>Certification ENIPATH</h2>
+              <p>Derniere etape : validez le score minimum puis recuperez badge et certificat.</p>
+            </div>
+            <button class="btn" type="button" (click)="passerExamenFinal(formation.examenFinal.idQuizz)">
+              Passer l'examen final
+            </button>
+          </section>
+        }
+      </main>
+
+      <aside class="section-card detail-side">
+        <h3>Ce que vous allez valider</h3>
+        <ul>
+          <li>Concepts fondamentaux</li>
+          <li>Cours textes structures</li>
+          <li>Examens par module</li>
+          <li>Examen final certifiant</li>
+          <li>Badge de progression</li>
+          <li>Certification PDF</li>
+        </ul>
+      </aside>
+    </section>
+  }
+</section>

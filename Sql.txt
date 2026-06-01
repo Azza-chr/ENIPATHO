@@ -1,0 +1,463 @@
+USE enipath;
+
+-- =====================================================
+-- ENIPATH - Script SQL Complet - VERSION TUNISIENNE
+-- =====================================================
+
+SET sql_safe_updates=0;
+SET FOREIGN_KEY_CHECKS=0;
+
+-- ===== ÉTAPE 1: SUPPRIMER TOUT =====
+DROP TABLE IF EXISTS etudiant_enseignants;
+DROP TABLE IF EXISTS enseignant_groupes;
+DROP TABLE IF EXISTS academic_choix_reponses;
+DROP TABLE IF EXISTS academic_questions;
+DROP TABLE IF EXISTS academic_quizzes;
+DROP TABLE IF EXISTS academic_ressources;
+DROP TABLE IF EXISTS academic_chapitres;
+DROP TABLE IF EXISTS academic_matieres;
+DROP TABLE IF EXISTS academic_semestres;
+DROP TABLE IF EXISTS admin;
+DROP TABLE IF EXISTS chef_departement;
+DROP TABLE IF EXISTS enseignant;
+DROP TABLE IF EXISTS etudiant;
+DROP TABLE IF EXISTS groupe;
+DROP TABLE IF EXISTS matiere;
+DROP TABLE IF EXISTS utilisateur;
+
+-- ===== ÉTAPE 2: CRÉER TABLES UTILISATEURS =====
+
+CREATE TABLE utilisateur (
+    usr_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    nom VARCHAR(100) NOT NULL,
+    prenom VARCHAR(100) NOT NULL,
+    email VARCHAR(150) UNIQUE NOT NULL,
+    mdp VARCHAR(255) NOT NULL,
+    actif BOOLEAN DEFAULT TRUE,
+    photo LONGBLOB,
+    dtype VARCHAR(50),
+    theme VARCHAR(20) DEFAULT 'light',
+    langue VARCHAR(10) DEFAULT 'fr',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE admin (
+    id BIGINT PRIMARY KEY,
+    CONSTRAINT fk_admin_user FOREIGN KEY (id) REFERENCES utilisateur(usr_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE chef_departement (
+    id BIGINT PRIMARY KEY,
+    departement VARCHAR(100),
+    CONSTRAINT fk_chef_user FOREIGN KEY (id) REFERENCES utilisateur(usr_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE matiere (
+    matiere_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    nom VARCHAR(150) NOT NULL,
+    code VARCHAR(50) UNIQUE,
+    description TEXT,
+    credits INT DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE groupe (
+    groupe_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    code CHAR(1) NOT NULL,
+    niveau INT NOT NULL,
+    max_etudiants INT DEFAULT 30,
+    nombre_etudiants INT DEFAULT 0,
+    CONSTRAINT chk_code CHECK(code IN ('A', 'B', 'C', 'D')),
+    CONSTRAINT chk_niveau CHECK(niveau IN (1, 2, 3)),
+    UNIQUE KEY uk_groupe (code, niveau)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE enseignant (
+    id BIGINT PRIMARY KEY,
+    departement VARCHAR(100),
+    specialite VARCHAR(100),
+    matiere_id BIGINT,
+    max_groupes INT DEFAULT 3,
+    bio TEXT,
+    phone VARCHAR(20),
+    office VARCHAR(50),
+    CONSTRAINT fk_enseignant_user FOREIGN KEY (id) REFERENCES utilisateur(usr_id) ON DELETE CASCADE,
+    CONSTRAINT fk_enseignant_matiere FOREIGN KEY (matiere_id) REFERENCES matiere(matiere_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE etudiant (
+    id BIGINT PRIMARY KEY,
+    niveau INT NOT NULL,
+    groupe CHAR(1) NOT NULL,
+    total_badges INT DEFAULT 0,
+    score INT DEFAULT 0,
+    progression_percentage INT DEFAULT 0,
+    total_heures_etude INT DEFAULT 0,
+    CONSTRAINT fk_etudiant_user FOREIGN KEY (id) REFERENCES utilisateur(usr_id) ON DELETE CASCADE,
+    CONSTRAINT chk_etud_niveau CHECK(niveau IN (1, 2, 3)),
+    CONSTRAINT chk_etud_groupe CHECK(groupe IN ('A', 'B', 'C', 'D'))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE enseignant_groupes (
+    enseignant_id BIGINT NOT NULL,
+    groupe_id BIGINT NOT NULL,
+    matiere_id BIGINT,
+    PRIMARY KEY (enseignant_id, groupe_id),
+    CONSTRAINT fk_eg_enseignant FOREIGN KEY (enseignant_id) REFERENCES enseignant(id) ON DELETE CASCADE,
+    CONSTRAINT fk_eg_groupe FOREIGN KEY (groupe_id) REFERENCES groupe(groupe_id) ON DELETE CASCADE,
+    CONSTRAINT fk_eg_matiere FOREIGN KEY (matiere_id) REFERENCES matiere(matiere_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE etudiant_enseignants (
+    etudiant_id BIGINT NOT NULL,
+    enseignant_id BIGINT NOT NULL,
+    PRIMARY KEY (etudiant_id, enseignant_id),
+    CONSTRAINT fk_ee_etudiant FOREIGN KEY (etudiant_id) REFERENCES etudiant(id) ON DELETE CASCADE,
+    CONSTRAINT fk_ee_enseignant FOREIGN KEY (enseignant_id) REFERENCES enseignant(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ===== ÉTAPE 3: CRÉER TABLES ACADÉMIQUES =====
+
+CREATE TABLE academic_semestres (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(10) NOT NULL UNIQUE,
+    libelle VARCHAR(100) NOT NULL,
+    ordre INT NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE academic_matieres (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(50) UNIQUE NOT NULL,
+    nom VARCHAR(150) NOT NULL,
+    description TEXT,
+    enseignant_nom VARCHAR(100),
+    semestre_id BIGINT NOT NULL,
+    CONSTRAINT fk_matiere_semestre FOREIGN KEY (semestre_id) REFERENCES academic_semestres(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE academic_chapitres (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    titre VARCHAR(200) NOT NULL,
+    description TEXT,
+    ordre INT NOT NULL,
+    published BOOLEAN DEFAULT TRUE,
+    matiere_id BIGINT NOT NULL,
+    CONSTRAINT fk_chapitre_matiere FOREIGN KEY (matiere_id) REFERENCES academic_matieres(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE academic_ressources (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    titre VARCHAR(200) NOT NULL,
+    description TEXT,
+    file_url VARCHAR(500),
+    mime_type VARCHAR(50),
+    type VARCHAR(50),
+    chapitre_id BIGINT NOT NULL,
+    CONSTRAINT fk_ressource_chapitre FOREIGN KEY (chapitre_id) REFERENCES academic_chapitres(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE academic_quizzes (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    titre VARCHAR(200) NOT NULL,
+    description TEXT,
+    duration_minutes INT DEFAULT 20,
+    passing_score INT DEFAULT 60,
+    chapitre_id BIGINT,
+    cours_id BIGINT,
+    CONSTRAINT fk_quiz_chapitre FOREIGN KEY (chapitre_id) REFERENCES academic_chapitres(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE academic_questions (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    enonce TEXT NOT NULL,
+    explication TEXT,
+    ordre INT NOT NULL,
+    points INT DEFAULT 1,
+    quiz_id BIGINT NOT NULL,
+    CONSTRAINT fk_question_quiz FOREIGN KEY (quiz_id) REFERENCES academic_quizzes(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE academic_choix_reponses (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    label TEXT NOT NULL,
+    correct BOOLEAN DEFAULT FALSE,
+    ordre INT NOT NULL,
+    question_id BIGINT NOT NULL,
+    CONSTRAINT fk_choix_question FOREIGN KEY (question_id) REFERENCES academic_questions(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+SET FOREIGN_KEY_CHECKS=1;
+
+-- ===== ÉTAPE 4: INSERTION SEMESTRES =====
+
+INSERT INTO academic_semestres (code, libelle, ordre) VALUES
+('S1', 'Semestre 1', 1),
+('S2', 'Semestre 2', 2);
+
+-- ===== ÉTAPE 4 BIS: INSERTION DES MATIERES GLOBALES (NOUVEAU) =====
+INSERT INTO matiere (nom, code, description, credits) VALUES
+('Programmation Java Avancée', 'JAV201', 'Développement orienté objet et frameworks', 4),
+('Développement Web Moderne', 'WEB101', 'Frontend et Backend (Angular, Node)', 4),
+('Bases de Données et SGBD', 'BDD101', 'Modélisation, SQL et optimisation', 3);
+
+-- ===== ÉTAPE 5: INSERTION MATIÈRES ACADÉMIQUES =====
+
+INSERT INTO academic_matieres (code, description, enseignant_nom, nom, semestre_id)
+VALUES
+('JAVA-S1', 'Maitriser la programmation orientee objet avec JAVA.', 'Noura Sarnou', 'Programmation Java', (SELECT id FROM academic_semestres WHERE code = 'S1')),
+('ALGO-S1', 'Structure de donnees et algorithmes fondamentaux.', 'Hazem Fkaier', 'Algorithmique avancee', (SELECT id FROM academic_semestres WHERE code = 'S1')),
+('RESEAUX-S1', 'Protocoles, architectures et securite reseaux.', 'Fatma Louati', 'Reseaux Informatiques', (SELECT id FROM academic_semestres WHERE code = 'S1')),
+('WEB-S1', 'HTML, CSS, JS et Frameworks modernes.', 'Mohamed Abidi', 'Developpement WEB', (SELECT id FROM academic_semestres WHERE code = 'S1')),
+('SYS-S1', 'Linux, processus, memoire et gestion des ressources.', 'Rajaa Tlili', 'Systeme d''exploitation', (SELECT id FROM academic_semestres WHERE code = 'S1')),
+('SGBD-S1', 'Maitriser la modelisation relationnelle avec les SGBD.', 'Olfa Lammouchi', 'Systemes de gestion des bases de donnees', (SELECT id FROM academic_semestres WHERE code = 'S1')),
+('COMPTA-S2', 'Maitriser l''equilibre comptable avec la comptabilite d''entreprise.', 'Mouna Rekik', 'Comptabilite d''entreprise', (SELECT id FROM academic_semestres WHERE code = 'S2')),
+('ENGLISH-S2', 'Maitriser la communication technique avec l''anglais professionnel.', 'Souad Fqaier', 'Technical english', (SELECT id FROM academic_semestres WHERE code = 'S2')),
+('TRE-S2', 'Maitriser la presentation de son profil avec les techniques de recherche d''emploi.', 'Chirine Bedhief', 'Techniques de recherche d''emploi', (SELECT id FROM academic_semestres WHERE code = 'S2'));
+
+-- ===== ÉTAPE 6: INSERTION CHAPITRES =====
+INSERT INTO academic_chapitres (description, ordre, published, titre, matiere_id)
+VALUES
+('Concepts fondamentaux, classes, objets, encapsulation et heritage.', 1, TRUE, 'Chapitre 1 - Introduction a Java', (SELECT id FROM academic_matieres WHERE code = 'JAVA-S1')),
+('Structures lineaires, tableaux, listes, piles et files.', 1, TRUE, 'Chapitre 1 - Structures de donnees', (SELECT id FROM academic_matieres WHERE code = 'ALGO-S1')),
+('Architecture reseau, protocoles TCP/IP et notions de securite.', 1, TRUE, 'Chapitre 1 - Bases des reseaux', (SELECT id FROM academic_matieres WHERE code = 'RESEAUX-S1')),
+('HTML, CSS, JavaScript et introduction aux frameworks.', 1, TRUE, 'Chapitre 1 - Fondamentaux du web', (SELECT id FROM academic_matieres WHERE code = 'WEB-S1')),
+('Processus, memoire, systeme de fichiers et ordonnancement.', 1, TRUE, 'Chapitre 1 - Bases du systeme', (SELECT id FROM academic_matieres WHERE code = 'SYS-S1')),
+('Modelisation relationnelle, tables, cles et SQL de base.', 1, TRUE, 'Chapitre 1 - Introduction aux SGBD', (SELECT id FROM academic_matieres WHERE code = 'SGBD-S1')),
+('Bilan, compte de resultat et principes comptables.', 1, TRUE, 'Chapitre 1 - Bases de comptabilite', (SELECT id FROM academic_matieres WHERE code = 'COMPTA-S2')),
+('Communication ecrite et orale en contexte technique.', 1, TRUE, 'Chapitre 1 - English for IT', (SELECT id FROM academic_matieres WHERE code = 'ENGLISH-S2')),
+('CV, lettre de motivation et entretien professionnel.', 1, TRUE, 'Chapitre 1 - Recherche d''emploi', (SELECT id FROM academic_matieres WHERE code = 'TRE-S2'));
+
+-- ===== ÉTAPE 7: INSERTION RESSOURCES =====
+INSERT INTO academic_ressources (description, file_url, mime_type, titre, type, chapitre_id)
+VALUES
+('Support principal du chapitre Java.', 'http://localhost:8081/files/java-cours.pdf', 'application/pdf', 'Cours Java (PDF)', 'COURS', (SELECT id FROM academic_chapitres WHERE titre = 'Chapitre 1 - Introduction a Java')),
+('TD de programmation Java.', 'http://localhost:8081/files/java-td.pdf', 'application/pdf', 'TD Java (PDF)', 'TD', (SELECT id FROM academic_chapitres WHERE titre = 'Chapitre 1 - Introduction a Java')),
+('Support structures de donnees.', 'http://localhost:8081/files/algo-cours.pdf', 'application/pdf', 'Cours Algorithmique (PDF)', 'COURS', (SELECT id FROM academic_chapitres WHERE titre = 'Chapitre 1 - Structures de donnees')),
+('Serie d exercices algorithmique.', 'http://localhost:8081/files/algo-td.pdf', 'application/pdf', 'TD Algorithmique (PDF)', 'TD', (SELECT id FROM academic_chapitres WHERE titre = 'Chapitre 1 - Structures de donnees')),
+('Support reseaux informatiques.', 'http://localhost:8081/files/reseaux-cours.pdf', 'application/pdf', 'Cours Reseaux (PDF)', 'COURS', (SELECT id FROM academic_chapitres WHERE titre = 'Chapitre 1 - Bases des reseaux')),
+('Travaux pratiques reseaux.', 'http://localhost:8081/files/reseaux-tp.pdf', 'application/pdf', 'TP Reseaux (PDF)', 'TP', (SELECT id FROM academic_chapitres WHERE titre = 'Chapitre 1 - Bases des reseaux')),
+('Support developpement web.', 'http://localhost:8081/files/web-cours.pdf', 'application/pdf', 'Cours Web (PDF)', 'COURS', (SELECT id FROM academic_chapitres WHERE titre = 'Chapitre 1 - Fondamentaux du web')),
+('Travaux pratiques web.', 'http://localhost:8081/files/web-tp.pdf', 'application/pdf', 'TP Web (PDF)', 'TP', (SELECT id FROM academic_chapitres WHERE titre = 'Chapitre 1 - Fondamentaux du web')),
+('Support systeme d exploitation.', 'http://localhost:8081/files/systeme-cours.pdf', 'application/pdf', 'Cours Systeme (PDF)', 'COURS', (SELECT id FROM academic_chapitres WHERE titre = 'Chapitre 1 - Bases du systeme')),
+('TP systeme Linux.', 'http://localhost:8081/files/systeme-tp.pdf', 'application/pdf', 'TP Systeme (PDF)', 'TP', (SELECT id FROM academic_chapitres WHERE titre = 'Chapitre 1 - Bases du systeme')),
+('Support bases de donnees.', 'http://localhost:8081/files/sgbd-cours.pdf', 'application/pdf', 'Cours SGBD (PDF)', 'COURS', (SELECT id FROM academic_chapitres WHERE titre = 'Chapitre 1 - Introduction aux SGBD')),
+('TP SQL.', 'http://localhost:8081/files/sgbd-tp.pdf', 'application/pdf', 'TP SGBD (PDF)', 'TP', (SELECT id FROM academic_chapitres WHERE titre = 'Chapitre 1 - Introduction aux SGBD')),
+('Support comptabilite.', 'http://localhost:8081/files/compta-cours.pdf', 'application/pdf', 'Cours Comptabilite (PDF)', 'COURS', (SELECT id FROM academic_chapitres WHERE titre = 'Chapitre 1 - Bases de comptabilite')),
+('Guide d exercices comptables.', 'http://localhost:8081/files/compta-guide.pdf', 'application/pdf', 'Guide Comptabilite (PDF)', 'GUIDE_PROJET', (SELECT id FROM academic_chapitres WHERE titre = 'Chapitre 1 - Bases de comptabilite')),
+('Support anglais technique.', 'http://localhost:8081/files/english-cours.pdf', 'application/pdf', 'Cours Technical English (PDF)', 'COURS', (SELECT id FROM academic_chapitres WHERE titre = 'Chapitre 1 - English for IT')),
+('TD anglais technique.', 'http://localhost:8081/files/english-td.pdf', 'application/pdf', 'TD Technical English (PDF)', 'TD', (SELECT id FROM academic_chapitres WHERE titre = 'Chapitre 1 - English for IT')),
+('Support techniques de recherche d emploi.', 'http://localhost:8081/files/tre-cours.pdf', 'application/pdf', 'Cours TRE (PDF)', 'COURS', (SELECT id FROM academic_chapitres WHERE titre = 'Chapitre 1 - Recherche d''emploi')),
+('Guide CV et entretien.', 'http://localhost:8081/files/tre-guide.pdf', 'application/pdf', 'Guide TRE (PDF)', 'GUIDE_PROJET', (SELECT id FROM academic_chapitres WHERE titre = 'Chapitre 1 - Recherche d''emploi'));
+
+-- ===== ÉTAPE 8: INSERTION QUIZZES =====
+INSERT INTO academic_quizzes (description, duration_minutes, passing_score, titre, chapitre_id)
+VALUES
+('Quiz d evaluation Java.', 20, 60, 'Quiz Java', (SELECT id FROM academic_chapitres WHERE titre = 'Chapitre 1 - Introduction a Java')),
+('Quiz d evaluation algorithmique.', 20, 60, 'Quiz Algorithmique', (SELECT id FROM academic_chapitres WHERE titre = 'Chapitre 1 - Structures de donnees')),
+('Quiz d evaluation reseaux.', 20, 60, 'Quiz Reseaux', (SELECT id FROM academic_chapitres WHERE titre = 'Chapitre 1 - Bases des reseaux')),
+('Quiz d evaluation web.', 20, 60, 'Quiz Web', (SELECT id FROM academic_chapitres WHERE titre = 'Chapitre 1 - Fondamentaux du web')),
+('Quiz d evaluation systeme.', 20, 60, 'Quiz Systeme', (SELECT id FROM academic_chapitres WHERE titre = 'Chapitre 1 - Bases du systeme')),
+('Quiz d evaluation SGBD.', 20, 60, 'Quiz SGBD', (SELECT id FROM academic_chapitres WHERE titre = 'Chapitre 1 - Introduction aux SGBD')),
+('Quiz d evaluation comptabilite.', 20, 60, 'Quiz Comptabilite', (SELECT id FROM academic_chapitres WHERE titre = 'Chapitre 1 - Bases de comptabilite')),
+('Quiz d evaluation anglais.', 20, 60, 'Quiz English', (SELECT id FROM academic_chapitres WHERE titre = 'Chapitre 1 - English for IT')),
+('Quiz d evaluation TRE.', 20, 60, 'Quiz TRE', (SELECT id FROM academic_chapitres WHERE titre = 'Chapitre 1 - Recherche d''emploi'));
+
+-- ===== ÉTAPE 9: INSERTION QUESTIONS & RÉPONSES =====
+INSERT INTO academic_questions (enonce, explication, ordre, points, quiz_id)
+VALUES
+('Java est principalement un langage ?', 'Java est un langage oriente objet.', 1, 1, (SELECT id FROM academic_quizzes WHERE titre = 'Quiz Java')),
+('Une classe Java sert a ?', 'Elle sert a definir des objets.', 2, 1, (SELECT id FROM academic_quizzes WHERE titre = 'Quiz Java')),
+('Une pile suit quelle logique ?', 'Une pile suit la logique LIFO.', 1, 1, (SELECT id FROM academic_quizzes WHERE titre = 'Quiz Algorithmique')),
+('La complexite de la recherche binaire est ?', 'Elle est logarithmique.', 2, 1, (SELECT id FROM academic_quizzes WHERE titre = 'Quiz Algorithmique')),
+('TCP est un protocole ?', 'TCP est un protocole de transport.', 1, 1, (SELECT id FROM academic_quizzes WHERE titre = 'Quiz Reseaux')),
+('Une adresse IP identifie ?', 'Elle identifie une machine sur un reseau.', 2, 1, (SELECT id FROM academic_quizzes WHERE titre = 'Quiz Reseaux')),
+('HTML sert principalement a ?', 'HTML structure le contenu.', 1, 1, (SELECT id FROM academic_quizzes WHERE titre = 'Quiz Web')),
+('CSS sert principalement a ?', 'CSS gere la presentation.', 2, 1, (SELECT id FROM academic_quizzes WHERE titre = 'Quiz Web')),
+('Le systeme d exploitation gere ?', 'Il gere les ressources de la machine.', 1, 1, (SELECT id FROM academic_quizzes WHERE titre = 'Quiz Systeme')),
+('Linux est ?', 'Linux est un systeme d exploitation.', 2, 1, (SELECT id FROM academic_quizzes WHERE titre = 'Quiz Systeme')),
+('Une cle primaire permet de ?', 'Elle identifie chaque ligne de facon unique.', 1, 1, (SELECT id FROM academic_quizzes WHERE titre = 'Quiz SGBD')),
+('SQL sert a ?', 'SQL sert a manipuler les bases relationnelles.', 2, 1, (SELECT id FROM academic_quizzes WHERE titre = 'Quiz SGBD')),
+('Le bilan comptable presente ?', 'Le patrimoine de l entreprise.', 1, 1, (SELECT id FROM academic_quizzes WHERE titre = 'Quiz Comptabilite')),
+('Le compte de resultat mesure ?', 'Le resultat d une periode.', 2, 1, (SELECT id FROM academic_quizzes WHERE titre = 'Quiz Comptabilite')),
+('Technical English est utile pour ?', 'La communication professionnelle technique.', 1, 1, (SELECT id FROM academic_quizzes WHERE titre = 'Quiz English')),
+('Un email professionnel doit etre ?', 'Clair et structure.', 2, 1, (SELECT id FROM academic_quizzes WHERE titre = 'Quiz English')),
+('Un CV doit etre ?', 'Clair, concis et adapte.', 1, 1, (SELECT id FROM academic_quizzes WHERE titre = 'Quiz TRE')),
+('Une lettre de motivation doit etre ?', 'Personnalisee pour le poste vise.', 2, 1, (SELECT id FROM academic_quizzes WHERE titre = 'Quiz TRE'));
+
+INSERT INTO academic_choix_reponses (correct, label, ordre, question_id)
+VALUES
+(TRUE, 'Oriente objet', 1, (SELECT id FROM academic_questions WHERE enonce = 'Java est principalement un langage ?')),
+(FALSE, 'Exclusivement machine', 2, (SELECT id FROM academic_questions WHERE enonce = 'Java est principalement un langage ?')),
+(FALSE, 'Seulement web', 3, (SELECT id FROM academic_questions WHERE enonce = 'Java est principalement un langage ?')),
+(FALSE, 'Sans typage', 4, (SELECT id FROM academic_questions WHERE enonce = 'Java est principalement un langage ?')),
+(TRUE, 'Definir des objets', 1, (SELECT id FROM academic_questions WHERE enonce = 'Une classe Java sert a ?')),
+(FALSE, 'Supprimer la memoire', 2, (SELECT id FROM academic_questions WHERE enonce = 'Une classe Java sert a ?')),
+(FALSE, 'Creer un reseau', 3, (SELECT id FROM academic_questions WHERE enonce = 'Une classe Java sert a ?')),
+(FALSE, 'Compiler le noyau Linux', 4, (SELECT id FROM academic_questions WHERE enonce = 'Une classe Java sert a ?')),
+(TRUE, 'LIFO', 1, (SELECT id FROM academic_questions WHERE enonce = 'Une pile suit quelle logique ?')),
+(FALSE, 'FIFO', 2, (SELECT id FROM academic_questions WHERE enonce = 'Une pile suit quelle logique ?')),
+(FALSE, 'Aleatoire', 3, (SELECT id FROM academic_questions WHERE enonce = 'Une pile suit quelle logique ?')),
+(FALSE, 'Lineaire obligatoire', 4, (SELECT id FROM academic_questions WHERE enonce = 'Une pile suit quelle logique ?')),
+(FALSE, 'O(n)', 1, (SELECT id FROM academic_questions WHERE enonce = 'La complexite de la recherche binaire est ?')),
+(TRUE, 'O(log n)', 2, (SELECT id FROM academic_questions WHERE enonce = 'La complexite de la recherche binaire est ?')),
+(FALSE, 'O(n²)', 3, (SELECT id FROM academic_questions WHERE enonce = 'La complexite de la recherche binaire est ?')),
+(FALSE, 'O(1) toujours', 4, (SELECT id FROM academic_questions WHERE enonce = 'La complexite de la recherche binaire est ?')),
+(TRUE, 'Transport', 1, (SELECT id FROM academic_questions WHERE enonce = 'TCP est un protocole ?')),
+(FALSE, 'Affichage', 2, (SELECT id FROM academic_questions WHERE enonce = 'TCP est un protocole ?')),
+(FALSE, 'Compilation', 3, (SELECT id FROM academic_questions WHERE enonce = 'TCP est un protocole ?')),
+(FALSE, 'Impression', 4, (SELECT id FROM academic_questions WHERE enonce = 'TCP est un protocole ?')),
+(TRUE, 'Une machine sur un reseau', 1, (SELECT id FROM academic_questions WHERE enonce = 'Une adresse IP identifie ?')),
+(FALSE, 'Un document PDF', 2, (SELECT id FROM academic_questions WHERE enonce = 'Une adresse IP identifie ?')),
+(FALSE, 'Une base SQL', 3, (SELECT id FROM academic_questions WHERE enonce = 'Une adresse IP identifie ?')),
+(FALSE, 'Une variable Java', 4, (SELECT id FROM academic_questions WHERE enonce = 'Une adresse IP identifie ?')),
+(TRUE, 'Structurer le contenu', 1, (SELECT id FROM academic_questions WHERE enonce = 'HTML sert principalement a ?')),
+(FALSE, 'Gerer la base de donnees', 2, (SELECT id FROM academic_questions WHERE enonce = 'HTML sert principalement a ?')),
+(FALSE, 'Compiler le code', 3, (SELECT id FROM academic_questions WHERE enonce = 'HTML sert principalement a ?')),
+(FALSE, 'Configurer le reseau', 4, (SELECT id FROM academic_questions WHERE enonce = 'HTML sert principalement a ?')),
+(TRUE, 'Gerer la presentation', 1, (SELECT id FROM academic_questions WHERE enonce = 'CSS sert principalement a ?')),
+(FALSE, 'Executer le serveur', 2, (SELECT id FROM academic_questions WHERE enonce = 'CSS sert principalement a ?')),
+(FALSE, 'Stocker les fichiers', 3, (SELECT id FROM academic_questions WHERE enonce = 'CSS sert principalement a ?')),
+(FALSE, 'Creer une base SQL', 4, (SELECT id FROM academic_questions WHERE enonce = 'CSS sert principalement a ?')),
+(TRUE, 'Les ressources de la machine', 1, (SELECT id FROM academic_questions WHERE enonce = 'Le systeme d exploitation gere ?')),
+(FALSE, 'Uniquement le navigateur', 2, (SELECT id FROM academic_questions WHERE enonce = 'Le systeme d exploitation gere ?')),
+(FALSE, 'Seulement les PDF', 3, (SELECT id FROM academic_questions WHERE enonce = 'Le systeme d exploitation gere ?')),
+(FALSE, 'Seulement le code Java', 4, (SELECT id FROM academic_questions WHERE enonce = 'Le systeme d exploitation gere ?')),
+(TRUE, 'Un systeme d exploitation', 1, (SELECT id FROM academic_questions WHERE enonce = 'Linux est ?')),
+(FALSE, 'Un langage HTML', 2, (SELECT id FROM academic_questions WHERE enonce = 'Linux est ?')),
+(FALSE, 'Une base de donnees', 3, (SELECT id FROM academic_questions WHERE enonce = 'Linux est ?')),
+(FALSE, 'Un protocole reseau', 4, (SELECT id FROM academic_questions WHERE enonce = 'Linux est ?')),
+(TRUE, 'Identifier une ligne de facon unique', 1, (SELECT id FROM academic_questions WHERE enonce = 'Une cle primaire permet de ?')),
+(FALSE, 'Colorer une page web', 2, (SELECT id FROM academic_questions WHERE enonce = 'Une cle primaire permet de ?')),
+(FALSE, 'Lancer un quiz', 3, (SELECT id FROM academic_questions WHERE enonce = 'Une cle primaire permet de ?')),
+(FALSE, 'Compresser un PDF', 4, (SELECT id FROM academic_questions WHERE enonce = 'Une cle primaire permet de ?')),
+(TRUE, 'Manipuler les bases relationnelles', 1, (SELECT id FROM academic_questions WHERE enonce = 'SQL sert a ?')),
+(FALSE, 'Dessiner une interface', 2, (SELECT id FROM academic_questions WHERE enonce = 'SQL sert a ?')),
+(FALSE, 'Remplacer JavaScript', 3, (SELECT id FROM academic_questions WHERE enonce = 'SQL sert a ?')),
+(FALSE, 'Configurer TCP', 4, (SELECT id FROM academic_questions WHERE enonce = 'SQL sert a ?')),
+(TRUE, 'Le patrimoine de l entreprise', 1, (SELECT id FROM academic_questions WHERE enonce = 'Le bilan comptable presente ?')),
+(FALSE, 'Le code source du site', 2, (SELECT id FROM academic_questions WHERE enonce = 'Le bilan comptable presente ?')),
+(FALSE, 'Le trafic reseau', 3, (SELECT id FROM academic_questions WHERE enonce = 'Le bilan comptable presente ?')),
+(FALSE, 'Les adresses IP', 4, (SELECT id FROM academic_questions WHERE enonce = 'Le bilan comptable presente ?')),
+(TRUE, 'Le resultat d une periode', 1, (SELECT id FROM academic_questions WHERE enonce = 'Le compte de resultat mesure ?')),
+(FALSE, 'La couleur d une interface', 2, (SELECT id FROM academic_questions WHERE enonce = 'Le compte de resultat mesure ?')),
+(FALSE, 'Le nombre de pages PDF', 3, (SELECT id FROM academic_questions WHERE enonce = 'Le compte de resultat mesure ?')),
+(FALSE, 'La capacite disque', 4, (SELECT id FROM academic_questions WHERE enonce = 'Le compte de resultat mesure ?')),
+(TRUE, 'La communication professionnelle technique', 1, (SELECT id FROM academic_questions WHERE enonce = 'Technical English est utile pour ?')),
+(FALSE, 'Le formatage SQL uniquement', 2, (SELECT id FROM academic_questions WHERE enonce = 'Technical English est utile pour ?')),
+(FALSE, 'La configuration reseau uniquement', 3, (SELECT id FROM academic_questions WHERE enonce = 'Technical English est utile pour ?')),
+(FALSE, 'Le montage video', 4, (SELECT id FROM academic_questions WHERE enonce = 'Technical English est utile pour ?')),
+(TRUE, 'Clair et structure', 1, (SELECT id FROM academic_questions WHERE enonce = 'Un email professionnel doit etre ?')),
+(FALSE, 'Vide', 2, (SELECT id FROM academic_questions WHERE enonce = 'Un email professionnel doit etre ?')),
+(FALSE, 'En langage machine', 3, (SELECT id FROM academic_questions WHERE enonce = 'Un email professionnel doit etre ?')),
+(FALSE, 'Sans objet', 4, (SELECT id FROM academic_questions WHERE enonce = 'Un email professionnel doit etre ?')),
+(TRUE, 'Clair, concis et adapte', 1, (SELECT id FROM academic_questions WHERE enonce = 'Un CV doit etre ?')),
+(FALSE, 'Toujours tres long', 2, (SELECT id FROM academic_questions WHERE enonce = 'Un CV doit etre ?')),
+(FALSE, 'Rempli de fautes', 3, (SELECT id FROM academic_questions WHERE enonce = 'Un CV doit etre ?')),
+(FALSE, 'Sans experience ni competences', 4, (SELECT id FROM academic_questions WHERE enonce = 'Un CV doit etre ?')),
+(TRUE, 'Personnalisee pour le poste vise', 1, (SELECT id FROM academic_questions WHERE enonce = 'Une lettre de motivation doit etre ?')),
+(FALSE, 'Identique pour tous les postes', 2, (SELECT id FROM academic_questions WHERE enonce = 'Une lettre de motivation doit etre ?')),
+(FALSE, 'Plus courte qu un titre', 3, (SELECT id FROM academic_questions WHERE enonce = 'Une lettre de motivation doit etre ?')),
+(FALSE, 'Vide et sans objet', 4, (SELECT id FROM academic_questions WHERE enonce = 'Une lettre de motivation doit etre ?'));
+
+-- ===== ÉTAPE 10: INSERTION UTILISATEURS & GROUPES =====
+
+INSERT INTO groupe (code, niveau, max_etudiants) VALUES
+('A', 1, 30), ('B', 1, 30), ('C', 1, 30), ('D', 1, 30),
+('A', 2, 30), ('B', 2, 30), ('C', 2, 30), ('D', 2, 30),
+('A', 3, 30), ('B', 3, 30), ('C', 3, 30), ('D', 3, 30);
+
+-- NOTE: Tous les mots de passe sont initialisés à "123456" via le hash BCrypt par défaut de Spring Security
+
+-- ADMIN
+INSERT INTO utilisateur (nom, prenom, email, mdp, actif, dtype, theme, langue) VALUES
+('Trabelsi', 'Amine', 'admin@enipath.tn', '$2a$10$DowzN7zI0c4l8c5q3H.c3.N6dC.eR/6f6yAOfmB8l2G3tQjT8G76G', TRUE, 'Admin', 'dark', 'fr');
+INSERT INTO admin (id) SELECT usr_id FROM utilisateur WHERE email='admin@enipath.tn';
+
+-- CHEFS DE DÉPARTEMENT
+INSERT INTO utilisateur (nom, prenom, email, mdp, actif, dtype, theme, langue) VALUES
+('Ben Ali', 'Sami', 'chef.ti@enipath.tn', '$2a$10$DowzN7zI0c4l8c5q3H.c3.N6dC.eR/6f6yAOfmB8l2G3tQjT8G76G', TRUE, 'ChefDepartement', 'light', 'fr'),
+('Mansour', 'Hela', 'chef.reseau@enipath.tn', '$2a$10$DowzN7zI0c4l8c5q3H.c3.N6dC.eR/6f6yAOfmB8l2G3tQjT8G76G', TRUE, 'ChefDepartement', 'light', 'fr');
+
+INSERT INTO chef_departement (id, departement) 
+SELECT usr_id, 'Informatique' FROM utilisateur WHERE email='chef.ti@enipath.tn'
+UNION ALL
+SELECT usr_id, 'Réseaux' FROM utilisateur WHERE email='chef.reseau@enipath.tn';
+
+-- ENSEIGNANTS RÉELS AVEC NOMS TUNISIENS
+INSERT INTO utilisateur (nom, prenom, email, mdp, actif, dtype, theme, langue) VALUES
+('Fkaier', 'Hazem', 'hazem.fkaier@enipath.tn', '$2a$10$DowzN7zI0c4l8c5q3H.c3.N6dC.eR/6f6yAOfmB8l2G3tQjT8G76G', TRUE, 'Enseignant', 'light', 'fr'),
+('Abidi', 'Mohamed', 'mohamed.abidi@enipath.tn', '$2a$10$DowzN7zI0c4l8c5q3H.c3.N6dC.eR/6f6yAOfmB8l2G3tQjT8G76G', TRUE, 'Enseignant', 'light', 'fr'),
+('Lammouchi', 'Olfa', 'olfa.lammouchi@enipath.tn', '$2a$10$DowzN7zI0c4l8c5q3H.c3.N6dC.eR/6f6yAOfmB8l2G3tQjT8G76G', TRUE, 'Enseignant', 'light', 'fr');
+
+INSERT INTO enseignant (id, departement, specialite, matiere_id, max_groupes, bio, phone, office)
+SELECT usr_id, 'Informatique', 'Algorithmique', (SELECT matiere_id FROM matiere WHERE code='JAV201'), 3, 'Expert en Algorithmique avec 15 ans d''expérience', '+216 90 123 456', 'A102'
+FROM utilisateur WHERE email='hazem.fkaier@enipath.tn'
+UNION ALL
+SELECT usr_id, 'Informatique', 'Web', (SELECT matiere_id FROM matiere WHERE code='WEB101'), 3, 'Spécialiste frontend et design web', '+216 90 234 567', 'A103'
+FROM utilisateur WHERE email='mohamed.abidi@enipath.tn'
+UNION ALL
+SELECT usr_id, 'Informatique', 'Données', (SELECT matiere_id FROM matiere WHERE code='BDD101'), 3, 'Ingénieure base de données confirmée', '+216 90 345 678', 'A104'
+FROM utilisateur WHERE email='olfa.lammouchi@enipath.tn';
+
+-- ÉTUDIANTS - Niveau 1 (NOMS TUNISIENS)
+INSERT INTO utilisateur (nom, prenom, email, mdp, actif, dtype, theme, langue) VALUES
+('Gharbi', 'Youssef', 'youssef.gharbi@etudiant.enipath.tn', '$2a$10$DowzN7zI0c4l8c5q3H.c3.N6dC.eR/6f6yAOfmB8l2G3tQjT8G76G', TRUE, 'Etudiant', 'light', 'fr'),
+('Jlassi', 'Fatma', 'fatma.jlassi@etudiant.enipath.tn', '$2a$10$DowzN7zI0c4l8c5q3H.c3.N6dC.eR/6f6yAOfmB8l2G3tQjT8G76G', TRUE, 'Etudiant', 'dark', 'fr'),
+('Chaabane', 'Omar', 'omar.chaabane@etudiant.enipath.tn', '$2a$10$DowzN7zI0c4l8c5q3H.c3.N6dC.eR/6f6yAOfmB8l2G3tQjT8G76G', TRUE, 'Etudiant', 'light', 'fr'),
+('Ayari', 'Mariem', 'mariem.ayari@etudiant.enipath.tn', '$2a$10$DowzN7zI0c4l8c5q3H.c3.N6dC.eR/6f6yAOfmB8l2G3tQjT8G76G', TRUE, 'Etudiant', 'light', 'fr'),
+('Dridi', 'Ahmed', 'ahmed.dridi@etudiant.enipath.tn', '$2a$10$DowzN7zI0c4l8c5q3H.c3.N6dC.eR/6f6yAOfmB8l2G3tQjT8G76G', TRUE, 'Etudiant', 'dark', 'fr'),
+('Ben Salah', 'Nour', 'nour.bensalah@etudiant.enipath.tn', '$2a$10$DowzN7zI0c4l8c5q3H.c3.N6dC.eR/6f6yAOfmB8l2G3tQjT8G76G', TRUE, 'Etudiant', 'light', 'fr'),
+('Khemiri', 'Rayen', 'rayen.khemiri@etudiant.enipath.tn', '$2a$10$DowzN7zI0c4l8c5q3H.c3.N6dC.eR/6f6yAOfmB8l2G3tQjT8G76G', TRUE, 'Etudiant', 'light', 'fr'),
+('Mejri', 'Yassine', 'yassine.mejri@etudiant.enipath.tn', '$2a$10$DowzN7zI0c4l8c5q3H.c3.N6dC.eR/6f6yAOfmB8l2G3tQjT8G76G', TRUE, 'Etudiant', 'dark', 'fr'),
+('Boughanmi', 'Rania', 'rania.boughanmi@etudiant.enipath.tn', '$2a$10$DowzN7zI0c4l8c5q3H.c3.N6dC.eR/6f6yAOfmB8l2G3tQjT8G76G', TRUE, 'Etudiant', 'light', 'fr'),
+('Trabelsi', 'Fares', 'fares.trabelsi@etudiant.enipath.tn', '$2a$10$DowzN7zI0c4l8c5q3H.c3.N6dC.eR/6f6yAOfmB8l2G3tQjT8G76G', TRUE, 'Etudiant', 'light', 'fr');
+
+-- ÉTUDIANTS - Niveau 2 (NOMS TUNISIENS)
+INSERT INTO utilisateur (nom, prenom, email, mdp, actif, dtype, theme, langue) VALUES
+('Messaoudi', 'Chaima', 'chaima.messaoudi@etudiant.enipath.tn', '$2a$10$DowzN7zI0c4l8c5q3H.c3.N6dC.eR/6f6yAOfmB8l2G3tQjT8G76G', TRUE, 'Etudiant', 'light', 'fr'),
+('Bouazizi', 'Aziz', 'aziz.bouazizi@etudiant.enipath.tn', '$2a$10$DowzN7zI0c4l8c5q3H.c3.N6dC.eR/6f6yAOfmB8l2G3tQjT8G76G', TRUE, 'Etudiant', 'dark', 'fr'),
+('Cherif', 'Eya', 'eya.cherif@etudiant.enipath.tn', '$2a$10$DowzN7zI0c4l8c5q3H.c3.N6dC.eR/6f6yAOfmB8l2G3tQjT8G76G', TRUE, 'Etudiant', 'light', 'fr'),
+('Ammar', 'Malek', 'malek.ammar@etudiant.enipath.tn', '$2a$10$DowzN7zI0c4l8c5q3H.c3.N6dC.eR/6f6yAOfmB8l2G3tQjT8G76G', TRUE, 'Etudiant', 'light', 'fr'),
+('Riahi', 'Seifeddine', 'seif.riahi@etudiant.enipath.tn', '$2a$10$DowzN7zI0c4l8c5q3H.c3.N6dC.eR/6f6yAOfmB8l2G3tQjT8G76G', TRUE, 'Etudiant', 'dark', 'fr');
+
+-- Insertion des étudiants dans la table etudiant
+INSERT INTO etudiant (id, niveau, groupe, total_badges, score, progression_percentage, total_heures_etude)
+SELECT usr_id, 1, 'A', 5, 75, 45, 25 FROM utilisateur WHERE email='youssef.gharbi@etudiant.enipath.tn'
+UNION ALL
+SELECT usr_id, 1, 'A', 3, 68, 35, 18 FROM utilisateur WHERE email='fatma.jlassi@etudiant.enipath.tn'
+UNION ALL
+SELECT usr_id, 1, 'B', 7, 82, 55, 32 FROM utilisateur WHERE email='omar.chaabane@etudiant.enipath.tn'
+UNION ALL
+SELECT usr_id, 1, 'B', 4, 70, 40, 22 FROM utilisateur WHERE email='mariem.ayari@etudiant.enipath.tn'
+UNION ALL
+SELECT usr_id, 1, 'C', 6, 79, 50, 28 FROM utilisateur WHERE email='ahmed.dridi@etudiant.enipath.tn'
+UNION ALL
+SELECT usr_id, 1, 'C', 2, 62, 30, 15 FROM utilisateur WHERE email='nour.bensalah@etudiant.enipath.tn'
+UNION ALL
+SELECT usr_id, 1, 'D', 8, 85, 60, 35 FROM utilisateur WHERE email='rayen.khemiri@etudiant.enipath.tn'
+UNION ALL
+SELECT usr_id, 1, 'D', 5, 76, 48, 26 FROM utilisateur WHERE email='yassine.mejri@etudiant.enipath.tn'
+UNION ALL
+SELECT usr_id, 1, 'A', 4, 71, 42, 20 FROM utilisateur WHERE email='rania.boughanmi@etudiant.enipath.tn'
+UNION ALL
+SELECT usr_id, 1, 'B', 6, 80, 52, 30 FROM utilisateur WHERE email='fares.trabelsi@etudiant.enipath.tn'
+UNION ALL
+SELECT usr_id, 2, 'A', 12, 88, 70, 42 FROM utilisateur WHERE email='chaima.messaoudi@etudiant.enipath.tn'
+UNION ALL
+SELECT usr_id, 2, 'A', 10, 84, 65, 38 FROM utilisateur WHERE email='aziz.bouazizi@etudiant.enipath.tn'
+UNION ALL
+SELECT usr_id, 2, 'B', 9, 81, 62, 35 FROM utilisateur WHERE email='eya.cherif@etudiant.enipath.tn'
+UNION ALL
+SELECT usr_id, 2, 'C', 11, 86, 68, 40 FROM utilisateur WHERE email='malek.ammar@etudiant.enipath.tn'
+UNION ALL
+SELECT usr_id, 2, 'D', 13, 90, 75, 45 FROM utilisateur WHERE email='seif.riahi@etudiant.enipath.tn';
+
+-- ===== VÉRIFICATION FINALE =====
+SELECT '========== DONNÉES INSÉRÉES AVEC SUCCÈS ==========' AS status;
+SELECT CONCAT('Utilisateurs: ', COUNT(*)) FROM utilisateur;
+SELECT CONCAT('Étudiants: ', COUNT(*)) FROM etudiant;
+SELECT CONCAT('Enseignants: ', COUNT(*)) FROM enseignant;
+SELECT CONCAT('Groupes: ', COUNT(*)) FROM groupe;
+SELECT CONCAT('Matières Globales: ', COUNT(*)) FROM matiere;
+SELECT CONCAT('Matières Académiques: ', COUNT(*)) FROM academic_matieres;
+SELECT CONCAT('Quizzes: ', COUNT(*)) FROM academic_quizzes;

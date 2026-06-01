@@ -1,0 +1,222 @@
+<!-- Role: shared application shell with top navigation and logout controls. -->
+<section class="role-shell">
+  <div class="role-shell__grid" aria-hidden="true"></div>
+
+  <header class="role-topbar fixed-topbar">
+    <div class="role-topbar__brand">
+      <a [routerLink]="homeLink" class="role-topbar__logo-link">
+        <img [src]="logoUrl" alt="Logo Enipath" />
+        <div>
+          <strong>ENIPATH</strong>
+        </div>
+      </a>
+    </div>
+
+    <nav class="role-nav">
+      <a
+        *ngFor="let item of navItems"
+        [routerLink]="item.path"
+        routerLinkActive="is-active"
+      >
+        {{ item.label }}
+      </a>
+    </nav>
+
+    <div class="global-search" *ngIf="session">
+      <div class="global-search__field">
+        <input
+          type="search"
+          name="globalProfileSearch"
+          [(ngModel)]="searchQuery"
+          placeholder="Rechercher un profil..."
+          autocomplete="off"
+        />
+      </div>
+
+      <div class="profile-results" *ngIf="searchQuery.trim()">
+        <button
+          class="profile-result"
+          type="button"
+          *ngFor="let profile of filteredProfiles"
+          (click)="openProfilePreview(profile)"
+        >
+          <img [src]="profile.photoUrl" [alt]="profile.name" />
+          <span>
+            <strong>{{ profile.name }}</strong>
+            <small>{{ roleLabel(profile.role) }} &middot; {{ profile.subtitle }}</small>
+          </span>
+        </button>
+
+        <div class="profile-result profile-result--empty" *ngIf="filteredProfiles.length === 0">
+          Aucun profil trouve
+        </div>
+      </div>
+    </div>
+
+    <div class="role-topbar__session" *ngIf="session as user">
+      <div class="role-topbar__identity">
+        <strong>{{ user.fullName }}</strong>
+        <span>{{ user.subtitle }}</span>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button class="btn-icon-action" type="button" (click)="toggleTheme()" title="Changer le thème">
+          <svg *ngIf="currentThemeLabel === 'Clair'" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+          <svg *ngIf="currentThemeLabel === 'Sombre'" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path>
+          </svg>
+        </button>
+        <button class="btn-icon-logout" type="button" (click)="logout()" title="Déconnexion">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="role-shell__main">
+    <router-outlet />
+  </main>
+
+  <footer class="role-footer modern-footer">
+    <div class="footer-content">
+      <div class="footer-brand">
+        <strong>ENIPATH</strong>
+        <p>Plateforme academique numerique pour apprendre, partager et piloter avec clarte.</p>
+      </div>
+      <div class="footer-links">
+        <a [routerLink]="homeLink + '/a-propos'" class="footer-link">A propos de l'application et de l'equipe</a>
+        <button type="button" class="footer-link footer-link--button" (click)="openContactModal()">Contactez-nous</button>
+      </div>
+      <div class="footer-copyright">
+        <span>&copy; 2026 ENIPATH. Tous droits reserves.</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- About Modal -->
+  <div class="modal-overlay" *ngIf="showAboutModal">
+    <div class="modal-content glass-panel about-modal">
+      <button class="close-btn" (click)="closeAboutModal()">&times;</button>
+      <h2 class="section-title text-center">À propos d'ENIPATH</h2>
+      <p class="section-subtitle text-center">L'avenir de la gestion académique</p>
+      
+      <div class="about-body">
+        <p>ENIPATH est une plateforme numérique conçue pour simplifier et optimiser l'expérience éducative des étudiants, enseignants et chefs de département. Nous croyons en une éducation connectée et transparente.</p>
+        
+        <h3 class="team-title">Notre Équipe</h3>
+        <div class="team-grid">
+          <div class="team-member">
+            <div class="member-photo avatar-1"></div>
+            <strong>Marwa</strong>
+            <span>Développeuse Full-Stack</span>
+          </div>
+          <div class="team-member">
+            <div class="member-photo avatar-2"></div>
+            <strong>Youssef</strong>
+            <span>Lead UI/UX Designer</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" *ngIf="showContactModal">
+    <div class="modal-content glass-panel contact-modal">
+      <button class="close-btn" type="button" (click)="closeContactModal()">&times;</button>
+      <span class="page-head__eyebrow">Reclamation technique</span>
+      <h2 class="section-title">Contactez-nous</h2>
+      <p class="section-subtitle">
+        Decrivez le probleme rencontre dans ENIPATH. La demande est enregistree localement pour le suivi technique.
+      </p>
+
+      <div class="contact-destination">
+        <strong>Destination</strong>
+        <span>Support technique ENIPATH - boite locale des reclamations</span>
+      </div>
+
+      <form class="contact-form" (ngSubmit)="submitContactRequest()">
+        <div class="form-grid">
+          <label class="field-group">
+            <span>Type de probleme</span>
+            <select class="select-field" name="category" [(ngModel)]="contactRequest.category">
+              <option value="connexion">Connexion / mot de passe</option>
+              <option value="cours">Cours ou PDF indisponible</option>
+              <option value="quiz">Quiz ou resultat</option>
+              <option value="messagerie">Messagerie</option>
+              <option value="autre">Autre probleme technique</option>
+            </select>
+          </label>
+
+          <label class="field-group">
+            <span>Priorite</span>
+            <select class="select-field" name="priority" [(ngModel)]="contactRequest.priority">
+              <option value="normale">Normale</option>
+              <option value="urgente">Urgente</option>
+              <option value="bloquante">Bloquante</option>
+            </select>
+          </label>
+        </div>
+
+        <label class="field-group">
+          <span>Objet</span>
+          <input class="input-field" name="subject" [(ngModel)]="contactRequest.subject" placeholder="Ex: impossible d'ouvrir un PDF" required />
+        </label>
+
+        <label class="field-group">
+          <span>Description</span>
+          <textarea
+            class="textarea-field"
+            name="description"
+            [(ngModel)]="contactRequest.description"
+            rows="5"
+            placeholder="Expliquez ce qui se passe, la page concernee et le compte utilise."
+            required
+          ></textarea>
+        </label>
+
+        <p class="success-text" *ngIf="contactMessage">{{ contactMessage }}</p>
+
+        <div class="actions-row contact-actions">
+          <button class="btn-ghost" type="button" (click)="closeContactModal()">Annuler</button>
+          <button class="btn" type="submit">Envoyer la reclamation</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-overlay" *ngIf="selectedProfile as profile">
+    <div class="modal-content glass-panel directory-modal">
+      <button class="close-btn" type="button" (click)="closeProfilePreview()">&times;</button>
+
+      <div class="directory-profile-head">
+        <img [src]="profile.photoUrl" [alt]="profile.name" />
+        <div>
+          <span class="page-head__eyebrow">{{ roleLabel(profile.role) }}</span>
+          <h2 class="section-title">{{ profile.name }}</h2>
+          <p class="section-subtitle">{{ profile.subtitle }}</p>
+          <p class="directory-email">{{ profile.email }}</p>
+        </div>
+      </div>
+
+      <div class="directory-section">
+        <strong>Bio</strong>
+        <p>{{ profile.bio }}</p>
+      </div>
+
+      <div class="directory-skills" *ngIf="profile.skills.length > 0">
+        <span *ngFor="let skill of profile.skills">{{ skill }}</span>
+      </div>
+
+      <div class="directory-cv">
+        <div>
+          <strong>CV</strong>
+          <p>{{ profile.cvUrl ? 'CV partage par cet utilisateur.' : 'CV non partage pour le moment.' }}</p>
+        </div>
+        <a class="btn" *ngIf="profile.cvUrl" [href]="profile.cvUrl" target="_blank" rel="noreferrer">
+          Ouvrir le CV
+        </a>
+      </div>
+    </div>
+  </div>
+</section>

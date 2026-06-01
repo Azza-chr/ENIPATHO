@@ -1,0 +1,60 @@
+<section class="analytics-grid" *ngIf="charts.length > 0">
+  <article class="analytics-card" *ngFor="let chart of charts">
+    <div class="analytics-card__head">
+      <div>
+        <h2 class="section-title">{{ chart.title }}</h2>
+        <p class="section-subtitle">{{ chart.subtitle }}</p>
+      </div>
+      <div class="chart-kpi">
+        <strong>{{ total(chart) }}</strong>
+        <span>{{ chart.unit ?? 'total' }}</span>
+      </div>
+    </div>
+
+    <div class="bar-chart" *ngIf="chart.kind === 'bar'">
+      <div class="bar-chart__plot">
+        <div class="bar-column" *ngFor="let item of chart.items">
+          <span class="bar-column__value">{{ item.value }}</span>
+          <div class="bar-column__track">
+            <span
+              class="bar-column__block"
+              [style.height.%]="barHeight(item, chart)"
+              [style.background]="item.color"
+              [attr.aria-label]="item.label + ' : ' + item.value"
+            ></span>
+          </div>
+          <strong>{{ item.label }}</strong>
+        </div>
+      </div>
+
+      <div class="chart-legend">
+        <div class="chart-legend__item" *ngFor="let item of chart.items">
+          <span [style.background]="item.color"></span>
+          <p>
+            <strong>{{ item.label }}</strong>
+            <small>{{ item.detail ?? item.value }}</small>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="pie-chart" *ngIf="chart.kind === 'pie'">
+      <div class="pie-chart__graphic" [style.background]="pieBackground(chart)">
+        <div>
+          <strong>{{ topItem(chart).label }}</strong>
+          <span>{{ percent(topItem(chart), chart) }}%</span>
+        </div>
+      </div>
+
+      <div class="chart-legend">
+        <div class="chart-legend__item" *ngFor="let item of chart.items">
+          <span [style.background]="item.color"></span>
+          <p>
+            <strong>{{ item.label }}</strong>
+            <small>{{ percent(item, chart) }}% - {{ item.detail ?? item.value }}</small>
+          </p>
+        </div>
+      </div>
+    </div>
+  </article>
+</section>

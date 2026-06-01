@@ -1,0 +1,295 @@
+<!-- Role: professional profile screen connected to the authenticated user. -->
+<section class="page-shell">
+  <header class="page-head profile-head">
+    <div class="page-head__copy">
+      <span class="page-head__eyebrow">Profil</span>
+      <h1 class="page-head__title">Mon espace personnel</h1>
+      <p class="page-head__subtitle">
+        Informations du compte, photo de profil et securite de connexion.
+      </p>
+    </div>
+  </header>
+
+  <div class="state-card" *ngIf="isLoading">
+    <h3>Chargement du profil</h3>
+    <p>Les informations utilisateur sont recuperees depuis la base.</p>
+  </div>
+
+  <section class="profile-grid" *ngIf="profile as user">
+    <div class="profile-main">
+      <article class="section-card identity-card">
+        <div class="identity-hero">
+          <div class="avatar-block">
+            <img *ngIf="user.photoUrl; else initialsAvatar" [src]="user.photoUrl" [alt]="user.fullName" />
+            <ng-template #initialsAvatar>
+              <div class="avatar-fallback">{{ initials }}</div>
+            </ng-template>
+
+            <label class="btn-secondary photo-button">
+              <input type="file" accept="image/*" (change)="onPhotoSelected($event)" />
+              {{ isUploadingPhoto ? 'Envoi...' : 'Ajouter une photo' }}
+            </label>
+          </div>
+
+          <div class="profile-score">
+            <strong>{{ completionScore }}%</strong>
+            <span>profil complete</span>
+            <div class="mini-progress"><i [style.width.%]="completionScore"></i></div>
+          </div>
+        </div>
+
+        <div class="identity-copy">
+          <span class="meta-chip">{{ roleLabel }}</span>
+          <h2>{{ user.fullName }}</h2>
+          <p>{{ personalData.bio || user.subtitle }}</p>
+        </div>
+
+        <div class="role-focus">
+          <div *ngFor="let item of roleFocus">
+            <span>{{ item.label }}</span>
+            <strong>{{ item.value }}</strong>
+          </div>
+        </div>
+
+        <dl class="profile-list">
+          <div>
+            <dt>Email</dt>
+            <dd class="profile-email">{{ user.email }}</dd>
+          </div>
+          <div>
+            <dt>Statut</dt>
+            <dd>{{ user.statut || 'Actif' }}</dd>
+          </div>
+          <div *ngIf="user.role === 'etudiant'">
+            <dt>Niveau</dt>
+            <dd>{{ user.niveau || '-' }}</dd>
+          </div>
+          <div *ngIf="user.role === 'etudiant'">
+            <dt>Groupe</dt>
+            <dd>{{ user.grp || '-' }}</dd>
+          </div>
+          <div *ngIf="user.filiere">
+            <dt>Filiere</dt>
+            <dd>{{ user.filiere }}</dd>
+          </div>
+          <div *ngIf="user.departement">
+            <dt>Departement</dt>
+            <dd>{{ user.departement }}</dd>
+          </div>
+          <div *ngIf="user.specialite">
+            <dt>Specialite</dt>
+            <dd>{{ user.specialite }}</dd>
+          </div>
+        </dl>
+
+        <div class="profile-links" *ngIf="publicLinks.length > 0">
+          <a *ngFor="let link of publicLinks" [href]="link.value" target="_blank" rel="noreferrer">
+            {{ link.label }}
+          </a>
+        </div>
+
+        <div class="skill-cloud" *ngIf="skillsList.length > 0">
+          <span *ngFor="let skill of skillsList">{{ skill }}</span>
+        </div>
+      </article>
+
+      <article class="section-card account-card personal-card">
+        <h2 class="section-title">Donnees Personnelles & CV</h2>
+        <p class="section-subtitle">Mettez en valeur votre profil professionnel.</p>
+
+        <form class="password-form" (ngSubmit)="savePersonalData()" style="margin-top: 1.5rem;">
+          <label class="field-group">
+            <span>Biographie courte</span>
+            <textarea
+              class="input-field"
+              name="bio"
+              [(ngModel)]="personalData.bio"
+              rows="3"
+              placeholder="Decrivez-vous en quelques mots..."
+            ></textarea>
+          </label>
+
+          <div class="form-grid">
+            <label class="field-group">
+              <span>Telephone</span>
+              <input class="input-field" type="tel" name="phone" [(ngModel)]="personalData.phone" placeholder="+216 ..." />
+            </label>
+
+            <label class="field-group">
+              <span>Adresse</span>
+              <input class="input-field" name="address" [(ngModel)]="personalData.address" placeholder="Ville, pays" />
+            </label>
+          </div>
+
+          <label class="field-group">
+            <span>Profil LinkedIn</span>
+            <input
+              class="input-field"
+              type="url"
+              name="linkedin"
+              [(ngModel)]="personalData.linkedin"
+              placeholder="https://linkedin.com/in/..."
+            />
+          </label>
+
+          <label class="field-group">
+            <span>Profil GitHub</span>
+            <input
+              class="input-field"
+              type="url"
+              name="github"
+              [(ngModel)]="personalData.github"
+              placeholder="https://github.com/..."
+            />
+          </label>
+
+          <label class="field-group">
+            <span>Portfolio</span>
+            <input
+              class="input-field"
+              type="url"
+              name="portfolio"
+              [(ngModel)]="personalData.portfolio"
+              placeholder="https://..."
+            />
+          </label>
+
+          <label class="field-group">
+            <span>Competences</span>
+            <textarea
+              class="input-field"
+              name="skills"
+              [(ngModel)]="personalData.skills"
+              rows="2"
+              placeholder="Java, Angular, Spring Boot..."
+            ></textarea>
+          </label>
+
+          <div class="field-group" style="margin-top: 1rem;">
+            <span>Mon CV (PDF uniquement)</span>
+            <div style="display: flex; gap: 1rem; align-items: center; margin-top: 0.5rem;">
+              <label class="btn-secondary photo-button" style="margin: 0; width: auto; cursor: pointer;">
+                <input type="file" accept="application/pdf" (change)="onCvSelected($event)" style="display: none;" />
+                {{ isUploadingCv ? 'Envoi...' : 'Importer un CV' }}
+              </label>
+              <a *ngIf="personalData.cvUrl" [href]="personalData.cvUrl" target="_blank" class="meta-chip" style="text-decoration: none;">
+                {{ personalData.cvFileName || 'Voir mon CV actuel' }}
+              </a>
+            </div>
+          </div>
+
+          <label class="share-toggle">
+            <input type="checkbox" name="shareCv" [(ngModel)]="personalData.shareCv" />
+            <span>Partager mon CV avec les enseignants et le departement</span>
+          </label>
+
+          <div class="actions-row" style="justify-content: flex-end; margin-top: 2rem;">
+            <button class="btn" type="submit" [disabled]="isSavingProfile">
+              {{ isSavingProfile ? 'Enregistrement...' : 'Enregistrer' }}
+            </button>
+          </div>
+        </form>
+      </article>
+    </div>
+
+    <aside class="profile-side">
+      <article class="section-card account-card security-card">
+        <div class="security-card__top">
+          <div class="security-icon">S</div>
+          <div>
+            <h2 class="section-title">Securite du compte</h2>
+            <p class="section-subtitle">Actions rapides pour proteger votre acces.</p>
+          </div>
+        </div>
+
+        <div class="actions-row security-actions">
+          <button class="btn" type="button" (click)="openPasswordModal()">Changer le mot de passe</button>
+          <button class="btn-ghost" type="button" (click)="logout()">Se deconnecter</button>
+        </div>
+      </article>
+    </aside>
+  </section>
+
+  <!-- Password Modal -->
+  <div class="modal-overlay" *ngIf="showPasswordModal">
+    <div class="modal-content password-modal">
+      <button class="password-modal__close" type="button" (click)="closePasswordModal()" aria-label="Fermer">
+        &times;
+      </button>
+
+      <div class="modal-security-head">
+        <div class="security-icon">S</div>
+        <div>
+          <span class="page-head__eyebrow">Securite</span>
+          <h2 class="section-title">Changer le mot de passe</h2>
+          <p class="section-subtitle">Mettez a jour votre acces avec une verification simple et lisible.</p>
+        </div>
+      </div>
+
+      <form class="password-form password-form--modal" (ngSubmit)="changePassword()">
+        <div class="password-fields">
+          <label class="secure-field">
+            <span>Mot de passe actuel</span>
+            <input
+              type="password"
+              name="currentPassword"
+              [(ngModel)]="passwordForm.currentPassword"
+              autocomplete="current-password"
+              required
+            />
+          </label>
+
+          <label class="secure-field">
+            <span>Nouveau mot de passe</span>
+            <input
+              type="password"
+              name="newPassword"
+              [(ngModel)]="passwordForm.newPassword"
+              autocomplete="new-password"
+              required
+              minlength="6"
+            />
+          </label>
+
+          <label class="secure-field">
+            <span>Confirmation</span>
+            <input
+              type="password"
+              name="confirmPassword"
+              [(ngModel)]="passwordForm.confirmPassword"
+              autocomplete="new-password"
+              required
+            />
+          </label>
+        </div>
+
+        <div class="strength-card">
+          <div>
+            <span>Force estimee</span>
+            <strong>{{ passwordStrengthLabel }}</strong>
+          </div>
+          <div class="strength-track">
+            <i [style.width.%]="passwordStrengthPercent"></i>
+          </div>
+        </div>
+
+        <p class="success-text" *ngIf="message">{{ message }}</p>
+        <p class="error-text" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+        <div class="password-rules">
+          <span [class.is-valid]="passwordHasLength">Au moins 6 caracteres</span>
+          <span [class.is-valid]="passwordIsNotDefault">Different du mot de passe par defaut</span>
+          <span [class.is-valid]="passwordHasComplexity">Lettres et chiffres</span>
+          <span [class.is-valid]="passwordConfirmationMatches">Confirmation identique</span>
+        </div>
+
+        <div class="actions-row modal-actions">
+          <button class="btn-ghost" type="button" (click)="closePasswordModal()">Annuler</button>
+          <button class="btn" type="submit" [disabled]="isSavingPassword">
+            {{ isSavingPassword ? 'Modification...' : 'Confirmer' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>

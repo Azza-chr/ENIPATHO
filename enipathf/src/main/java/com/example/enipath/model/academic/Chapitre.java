@@ -1,0 +1,63 @@
+package com.example.enipath.model.academic;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Entity
+@Table(name = "academic_chapitres")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Chapitre {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, length = 150)
+    private String titre;
+
+    @Column(nullable = false, length = 1500)
+    private String description;
+
+    @Column(nullable = false)
+    private Integer ordre;
+
+    @Column(nullable = false)
+    private boolean published;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "matiere_id", nullable = false)
+    @JsonIgnoreProperties({"semestre", "chapitres"})
+    private Matiere matiere;
+
+    @Builder.Default
+    @OneToMany(mappedBy = "chapitre", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties({"chapitre"})
+    private List<RessourcePedagogique> ressources = new ArrayList<>();
+
+    @OneToOne(mappedBy = "chapitre", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties({"chapitre"})
+    private Quiz quiz;
+}

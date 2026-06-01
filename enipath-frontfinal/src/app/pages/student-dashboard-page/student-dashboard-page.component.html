@@ -1,0 +1,141 @@
+<div class="dashboard-3d-wrapper">
+  <div class="dashboard-3d-bg"></div>
+  <div class="dashboard-3d-grid-layer"></div>
+  <div class="dashboard-3d-particles"></div>
+
+  <section class="page-shell modern-dashboard">
+    <header class="page-head glass-panel">
+      <div class="page-head__copy">
+        <h1 class="page-head__title">Bonjour {{ session?.fullName || 'Étudiant' }}</h1>
+        <p class="page-head__subtitle">
+          Bienvenue sur votre espace d'apprentissage. Suivez vos cours, vos quiz et vos certifications.
+        </p>
+      </div>
+    </header>
+
+    <div class="state-card glass-panel" *ngIf="isLoading">
+      <div class="loader-spinner"></div>
+      <h3>Initialisation de votre espace...</h3>
+    </div>
+
+    <ng-container *ngIf="overview as data">
+
+      <!-- KPIs -->
+      <section class="dashboard-stat-grid">
+        <article class="content-card stat-card glass-panel hover-lift" *ngFor="let stat of data.stats">
+          <span>{{ stat.label }}</span>
+          <strong>{{ stat.value }}</strong>
+          <p>{{ stat.detail }}</p>
+        </article>
+      </section>
+
+      <section class="dashboard-grid main-content-grid">
+
+        <!-- Colonne gauche : Charts + Progression -->
+        <div class="grid-col left-col">
+
+          <div class="glass-panel padded-panel chart-container">
+            <app-dashboard-charts [charts]="data.charts" />
+          </div>
+
+          <article class="section-card glass-panel padded-panel">
+            <div class="section-heading">
+              <h2 class="section-title">Progression par matière</h2>
+            </div>
+            <div class="progress-list">
+              <div class="progress-item" *ngFor="let item of data.progress">
+                <div class="progress-item__head">
+                  <strong>{{ item.label }}</strong>
+                  <span
+                    class="pct-badge"
+                    [class.warning]="item.progress < 50"
+                    [class.success]="item.progress >= 80"
+                  >{{ item.progress }}%</span>
+                </div>
+                <div class="progress-item__track">
+                  <span
+                    [style.width.%]="item.progress"
+                    [class.warning-bg]="item.progress < 50"
+                    [class.success-bg]="item.progress >= 80"
+                  ></span>
+                </div>
+                <small>{{ item.detail }}</small>
+              </div>
+            </div>
+          </article>
+
+        </div>
+
+        <!-- Colonne droite : Annonces + Matières à réviser -->
+        <div class="grid-col right-col">
+
+          <!-- Annonces -->
+          <article class="section-card glass-panel padded-panel">
+            <div class="section-heading sticky-header">
+              <h2 class="section-title">Annonces</h2>
+              <p class="section-subtitle">Messages de vos profs et du département</p>
+            </div>
+
+            <div class="feed-list animated-list">
+              <div
+                class="feed-item glass-item"
+                *ngFor="let item of data.notifications; let i = index"
+                [style.animation-delay]="(i * 0.1) + 's'"
+              >
+                <div class="feed-content" style="width: 100%;">
+                  <strong>{{ item.title }}</strong>
+                  <p>{{ item.description }}</p>
+                  <div>
+                    <span class="meta-time">{{ item.meta }}</span>
+                    <span *ngIf="item.isNew" class="meta-time new-badge">Nouveau</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="state-card" *ngIf="data.notifications.length === 0" style="padding: 24px;">
+                <p>Aucune annonce pour le moment.</p>
+              </div>
+            </div>
+          </article>
+
+          <!-- Matières à réviser -->
+          <article class="section-card glass-panel padded-panel" style="margin-top: 2rem;">
+            <div class="section-heading sticky-header">
+              <h2 class="section-title">Matières à réviser</h2>
+              <p class="section-subtitle">Recommandations basées sur vos quiz</p>
+            </div>
+
+            <div class="feed-list animated-list">
+
+              <!-- ✅ <a> cliquable avec routerLink vers la matière -->
+              <a
+                class="feed-item glass-item warning-border"
+                *ngFor="let item of data.recentCourses; let i = index"
+                [style.animation-delay]="(i * 0.1) + 's'"
+                [routerLink]="item.link ? [item.link] : null"
+                style="text-decoration: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer;"
+              >
+                <div class="feed-content">
+                  <strong>{{ item.title }}</strong>
+                  <p>{{ item.description }}</p>
+                  <span class="meta-time warning-text">{{ item.meta }}</span>
+                </div>
+                <span
+                  *ngIf="item.link"
+                  style="font-size: 1.1rem; color: var(--amber); flex-shrink: 0; font-weight: 700;"
+                >→</span>
+              </a>
+
+              <div class="state-card" *ngIf="data.recentCourses.length === 0" style="padding: 24px;">
+                <p>Toutes vos matières sont à jour. Continuez comme ça !</p>
+              </div>
+
+            </div>
+          </article>
+
+        </div>
+
+      </section>
+    </ng-container>
+  </section>
+</div>

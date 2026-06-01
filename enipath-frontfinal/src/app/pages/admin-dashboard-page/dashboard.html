@@ -1,0 +1,308 @@
+<!-- Role: admin dashboard page without sidebar, harmonized with platform design. -->
+<section class="page-shell">
+  <header class="page-head">
+    <div class="page-head__copy">
+      <span class="page-head__eyebrow">Administration</span>
+      <h1 class="page-head__title">Bonjour {{ adminUser?.fullName || 'Administrateur' }}</h1>
+      <p class="page-head__subtitle">
+        Vue globale de la plateforme — utilisateurs, notifications et réclamations.
+      </p>
+    </div>
+  </header>
+
+  <!-- LOADING -->
+  <div class="state-card" *ngIf="loading">
+    <h3>Chargement du tableau de bord</h3>
+    <p>Les données sont en cours de préparation.</p>
+  </div>
+
+  <!-- ERROR -->
+  <div class="state-card state-card--error" *ngIf="error && !loading">
+    <h3>Erreur de chargement</h3>
+    <p>{{ error }}</p>
+  </div>
+
+  <ng-container *ngIf="!loading && !error">
+
+    <!-- KPI STATS -->
+    <section class="dashboard-stat-grid" *ngIf="stats">
+      <article class="content-card stat-card">
+        <span>Étudiants inscrits</span>
+        <strong>{{ stats.totalEtudiants }}</strong>
+        <p>Apprenants actifs sur la plateforme</p>
+      </article>
+      <article class="content-card stat-card">
+        <span>Enseignants</span>
+        <strong>{{ stats.totalEnseignants }}</strong>
+        <p>Corps pédagogique enregistré</p>
+      </article>
+      <article class="content-card stat-card">
+        <span>Notifications actives</span>
+        <strong>{{ stats.notificationsActives }}</strong>
+        <p>Diffusées sur la plateforme</p>
+      </article>
+      <article class="content-card stat-card stat-card--alert" *ngIf="stats.reclamationsEnAttente > 0">
+        <span>Réclamations en attente</span>
+        <strong>{{ stats.reclamationsEnAttente }}</strong>
+        <p>À traiter en priorité</p>
+      </article>
+      <article class="content-card stat-card" *ngIf="stats.reclamationsEnAttente === 0">
+        <span>Réclamations en attente</span>
+        <strong>0</strong>
+        <p>Aucune réclamation en attente</p>
+      </article>
+    </section>
+
+    <!-- TABS NAV -->
+    <nav class="tab-nav">
+      <button class="tab-btn" [class.active]="activeTab === 'overview'"   (click)="setTab('overview')">Vue générale</button>
+      <button class="tab-btn" [class.active]="activeTab === 'etudiants'"  (click)="setTab('etudiants')">Étudiants</button>
+      <button class="tab-btn" [class.active]="activeTab === 'enseignants'"(click)="setTab('enseignants')">Enseignants</button>
+      <button class="tab-btn" [class.active]="activeTab === 'notifs'"     (click)="setTab('notifs')">
+        Notifications
+      </button>
+      <button class="tab-btn" [class.active]="activeTab === 'reclamations'" (click)="setTab('reclamations')">
+        Réclamations
+        <span class="tab-badge" *ngIf="pendingReclamations > 0">{{ pendingReclamations }}</span>
+      </button>
+    </nav>
+
+    <!-- ── TAB: OVERVIEW ── -->
+    <div class="tab-content" *ngIf="activeTab === 'overview'">
+      <div class="dashboard-grid">
+
+        <!-- Derniers étudiants -->
+        <article class="section-card">
+          <h2 class="section-title">Derniers étudiants</h2>
+          <div class="feed-list feed-list--scroll">
+            <div class="feed-item" *ngFor="let e of etudiants | slice:0:6">
+              <strong>{{ e.nom }} {{ e.prenom }}</strong>
+              <p>{{ e.email }}</p>
+              <span>Niveau {{ e.niveauScolaire || e.niveau || '—' }}</span>
+            </div>
+            <div class="feed-item feed-item--empty" *ngIf="etudiants.length === 0">
+              <p>Aucun étudiant chargé.</p>
+            </div>
+          </div>
+        </article>
+
+        <!-- Réclamations récentes -->
+        <article class="section-card">
+          <h2 class="section-title">Réclamations récentes</h2>
+          <div class="feed-list feed-list--scroll">
+            <div
+              class="feed-item feed-item--clickable"
+              *ngFor="let r of reclamations | slice:0:6"
+              (click)="openReclamation(r)"
+            >
+              <strong>{{ r.sujet }}</strong>
+              <p>{{ r.contenu | slice:0:80 }}…</p>
+              <span class="statut-badge" [ngClass]="getStatutClass(r.statut)">{{ r.statut }}</span>
+            </div>
+            <div class="feed-item feed-item--empty" *ngIf="reclamations.length === 0">
+              <p>Aucune réclamation.</p>
+            </div>
+          </div>
+        </article>
+      </div>
+    </div>
+
+    <!-- ── TAB: ÉTUDIANTS ── -->
+    <div class="tab-content" *ngIf="activeTab === 'etudiants'">
+      <article class="section-card">
+        <h2 class="section-title">Liste des étudiants ({{ etudiants.length }})</h2>
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Nom complet</th>
+                <th>Email</th>
+                <th>Niveau</th>
+                <th>Score</th>
+                <th>Badges</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let e of etudiants">
+                <td>{{ e.nom }} {{ e.prenom }}</td>
+                <td class="text-muted">{{ e.email }}</td>
+                <td>
+                  <span class="badge-level">{{ e.niveauScolaire || e.niveau || '—' }}</span>
+                </td>
+                <td>
+                  <div class="score-bar">
+                    <div class="score-fill-wrap">
+                      <div class="score-fill" [style.width.%]="e.score || 0"></div>
+                    </div>
+                    <span class="score-val">{{ e.score || 0 }}%</span>
+                  </div>
+                </td>
+                <td class="badge-count">{{ e.totalBadges || 0 }}</td>
+              </tr>
+              <tr *ngIf="etudiants.length === 0">
+                <td colspan="5" class="text-muted" style="text-align:center;padding:24px">
+                  Aucun étudiant trouvé.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+    </div>
+
+    <!-- ── TAB: ENSEIGNANTS ── -->
+    <div class="tab-content" *ngIf="activeTab === 'enseignants'">
+      <article class="section-card">
+        <h2 class="section-title">Liste des enseignants ({{ enseignants.length }})</h2>
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Nom complet</th>
+                <th>Email</th>
+                <th>Spécialité</th>
+                <th>Matières</th>
+                <th>Statut</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let e of enseignants">
+                <td>{{ e.nom }} {{ e.prenom }}</td>
+                <td class="text-muted">{{ e.email }}</td>
+                <td class="text-muted">{{ e.specialite || '—' }}</td>
+                <td>{{ e.totalMatieres || 0 }}</td>
+                <td>
+                  <span [class]="e.actif ? 'status-active' : 'status-inactive'">
+                    {{ e.actif ? 'Actif' : 'Inactif' }}
+                  </span>
+                </td>
+              </tr>
+              <tr *ngIf="enseignants.length === 0">
+                <td colspan="5" class="text-muted" style="text-align:center;padding:24px">
+                  Aucun enseignant trouvé.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+    </div>
+
+    <!-- ── TAB: NOTIFICATIONS ── -->
+    <div class="tab-content" *ngIf="activeTab === 'notifs'">
+      <div class="dashboard-grid">
+
+        <!-- Formulaire création -->
+        <article class="section-card">
+          <h2 class="section-title">Nouvelle notification</h2>
+          <div class="form-group">
+            <input
+              class="form-input"
+              type="text"
+              placeholder="Titre"
+              [(ngModel)]="newNotif.titre"
+            />
+          </div>
+          <div class="form-group">
+            <textarea
+              class="form-textarea"
+              placeholder="Contenu du message…"
+              [(ngModel)]="newNotif.contenu"
+            ></textarea>
+          </div>
+          <div class="form-group">
+            <select class="form-input" [(ngModel)]="newNotif.cible">
+              <option value="ALL">Tous les utilisateurs</option>
+              <option value="ETUDIANT">Étudiants uniquement</option>
+              <option value="ENSEIGNANT">Enseignants uniquement</option>
+            </select>
+          </div>
+          <button class="btn btn--primary" (click)="sendNotification()">Envoyer</button>
+        </article>
+
+        <!-- Liste notifications -->
+        <article class="section-card">
+          <h2 class="section-title">Notifications envoyées ({{ notifications.length }})</h2>
+          <div class="feed-list feed-list--scroll">
+            <div
+              class="feed-item"
+              [class.feed-item--inactive]="!n.active"
+              *ngFor="let n of notifications"
+            >
+              <strong>{{ n.titre }}</strong>
+              <p>{{ n.contenu }}</p>
+              <div class="feed-item__footer">
+                <span class="cible-badge">{{ n.cible }}</span>
+                <button
+                  class="btn--danger-sm"
+                  *ngIf="n.active"
+                  (click)="deactivateNotif(n.id)"
+                >Désactiver</button>
+                <span class="text-muted" *ngIf="!n.active">Inactive</span>
+              </div>
+            </div>
+            <div class="feed-item feed-item--empty" *ngIf="notifications.length === 0">
+              <p>Aucune notification envoyée.</p>
+            </div>
+          </div>
+        </article>
+      </div>
+    </div>
+
+    <!-- ── TAB: RÉCLAMATIONS ── -->
+    <div class="tab-content" *ngIf="activeTab === 'reclamations'">
+      <article class="section-card">
+        <h2 class="section-title">Réclamations ({{ reclamations.length }})</h2>
+        <div class="feed-list">
+          <div
+            class="feed-item feed-item--clickable"
+            *ngFor="let r of reclamations"
+            (click)="openReclamation(r)"
+          >
+            <div class="feed-item__row">
+              <strong>{{ r.sujet }}</strong>
+              <span class="statut-badge" [ngClass]="getStatutClass(r.statut)">{{ r.statut }}</span>
+            </div>
+            <p>{{ r.contenu | slice:0:120 }}…</p>
+            <span class="text-muted">{{ r.utilisateurNom || 'Étudiant' }}</span>
+          </div>
+          <div class="feed-item feed-item--empty" *ngIf="reclamations.length === 0">
+            <p>Aucune réclamation.</p>
+          </div>
+        </div>
+      </article>
+    </div>
+
+  </ng-container>
+</section>
+
+<!-- ── MODAL RÉCLAMATION ── -->
+<div class="modal-overlay" *ngIf="selectedReclamation" (click)="closeReclamation()">
+  <div class="modal-card content-card" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>{{ selectedReclamation.sujet }}</h3>
+      <button class="icon-btn" (click)="closeReclamation()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="modal-text">{{ selectedReclamation.contenu }}</p>
+      <div class="form-group">
+        <textarea
+          class="form-textarea"
+          placeholder="Votre réponse…"
+          [(ngModel)]="reclamationReponse.reponseAdmin"
+        ></textarea>
+      </div>
+      <div class="form-group">
+        <select class="form-input" [(ngModel)]="reclamationReponse.statut">
+          <option value="RESOLUE">Résolue</option>
+          <option value="REJETEE">Rejetée</option>
+          <option value="EN_COURS">En cours</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn--ghost" (click)="closeReclamation()">Annuler</button>
+      <button class="btn btn--primary" (click)="submitReponse()">Envoyer la réponse</button>
+    </div>
+  </div>
+</div>

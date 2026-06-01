@@ -1,0 +1,254 @@
+<!-- Role: teacher publishing workspace for PDF courses and quizzes. -->
+<section class="page-shell">
+  <header class="page-head teacher-hero">
+    <div class="page-head__copy">
+      <span class="page-head__eyebrow">Pilotage enseignant</span>
+      <h1 class="page-head__title">Publier vos cours et piloter les quiz avec clarte</h1>
+      <p class="page-head__subtitle">
+        Un espace enseignant simple et professionnel pour publier un support PDF, suivre les contenus deja partages
+        et enrichir chaque cours avec un quiz.
+      </p>
+    </div>
+  </header>
+
+  <div class="state-card" *ngIf="isLoading">
+    <h3>Chargement de l espace enseignant</h3>
+    <p>Les matieres existantes sont en cours de recuperation.</p>
+  </div>
+
+  <p
+    class="teacher-feedback"
+    *ngIf="feedbackMessage"
+    [class.is-success]="feedbackType === 'success'"
+    [class.is-error]="feedbackType === 'error'"
+  >
+    {{ feedbackMessage }}
+  </p>
+
+  <div class="teacher-layout" *ngIf="!isLoading">
+    <form class="content-card teacher-block" [formGroup]="courseForm" (ngSubmit)="publishCourse()">
+      <div class="teacher-block__head">
+        <h2>1. Publier le PDF</h2>
+        <p>Choisissez le groupe cible, la matiere associee, importez le PDF, puis publiez le cours.</p>
+      </div>
+
+      <div class="form-grid">
+        <div class="field-group">
+          <label for="groupeId">Groupe cible</label>
+          <select id="groupeId" class="select-field" formControlName="groupeId">
+            <option *ngFor="let groupe of groupes" [value]="groupe.id">
+              Groupe {{ groupe.nom }}<ng-container *ngIf="groupe.niveau"> - Niveau {{ groupe.niveau }}</ng-container>
+            </option>
+          </select>
+        </div>
+
+        <!-- ✅ Sélecteur de matière -->
+        <div class="field-group">
+          <label for="matiereId">Matiere associee</label>
+          <select id="matiereId" class="select-field" formControlName="matiereId">
+            <option [value]="0">-- Aucune matiere --</option>
+            <option *ngFor="let matiere of matieres" [value]="matiere.id">
+              {{ matiere.nom }}
+            </option>
+          </select>
+          <span class="hint-text">
+            Choisir une matiere permet aux etudiants de trouver ce cours depuis leur dashboard.
+          </span>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label for="pdfFile">Fichier PDF</label>
+        <input id="pdfFile" class="input-field" type="file" accept="application/pdf" (change)="onPdfSelected($event)" />
+        <span class="hint-text" *ngIf="selectedPdfName">PDF selectionne : {{ selectedPdfName }}</span>
+      </div>
+
+      <div class="field-group">
+        <label for="titre">Titre du cours</label>
+        <input id="titre" class="input-field" formControlName="titre" placeholder="Ex: Cours Java complet" />
+      </div>
+
+      <div class="field-group">
+        <label for="description">Description</label>
+        <textarea id="description" class="textarea-field" formControlName="description"></textarea>
+      </div>
+
+      <div class="actions-row">
+        <button class="btn" type="submit" [disabled]="isPublishingCourse">
+          {{ isPublishingCourse ? 'Partage...' : 'Partager le cours PDF' }}
+        </button>
+      </div>
+    </form>
+
+    <section class="content-card teacher-block">
+      <div class="teacher-block__head">
+        <h2>2. Cours deja partages</h2>
+        <p>Clique directement sur une carte pour la selectionner et preparer le quiz associe.</p>
+      </div>
+
+      <div class="course-list" *ngIf="cours.length > 0; else noCourse">
+        <article
+          class="course-card"
+          *ngFor="let course of cours"
+          [class.is-selected]="selectedCourse?.id === course.id"
+          (click)="selectCourseForQuiz(course)"
+        >
+          <div class="course-card__copy">
+            <h3>{{ course.titre }}</h3>
+            <p>{{ course.originalFileName }}</p>
+          </div>
+
+          <div class="course-card__actions">
+            <span class="meta-chip" [class.meta-chip--danger]="isEmptyQuiz(course)">{{ getQuizBadge(course) }}</span>
+            <button class="btn-ghost" type="button" *ngIf="course.quizId" [disabled]="deletingQuizId === course.quizId" (click)="$event.stopPropagation(); deleteQuiz(course)">
+              {{ deletingQuizId === course.quizId ? 'Suppression...' : isEmptyQuiz(course) ? 'Nettoyer le quiz vide' : 'Supprimer le quiz' }}
+            </button>
+            <button class="btn-ghost" type="button" [disabled]="deletingCourseId === course.id" (click)="$event.stopPropagation(); deleteCourse(course)">
+              {{ deletingCourseId === course.id ? 'Suppression cours...' : 'Supprimer le cours' }}
+            </button>
+          </div>
+        </article>
+      </div>
+
+      <ng-template #noCourse>
+        <div class="state-card">
+          <h3>Aucun cours partage</h3>
+          <p>Publie d abord un PDF pour qu il apparaisse ici puis cote etudiant.</p>
+        </div>
+      </ng-template>
+    </section>
+
+    <form class="content-card teacher-block teacher-block--wide" [formGroup]="quizForm">
+      <div class="teacher-block__head">
+        <h2>3. Construire le quiz du cours choisi</h2>
+        <p>Renseigne un quiz clair, rapide a lire et directement exploitable par l etudiant.</p>
+      </div>
+
+      <div class="selected-course-banner" *ngIf="selectedCourse as course">
+        <strong>{{ course.titre }}</strong>
+        <span>
+          {{ isEmptyQuiz(course)
+            ? 'Ce cours contient un quiz vide. Une nouvelle publication remplacera automatiquement ce brouillon.'
+            : course.quizId
+              ? 'Ce cours a deja un quiz complet. Supprime-le si tu veux le refaire.'
+              : 'Ce cours est pret a recevoir un quiz.' }}
+        </span>
+      </div>
+
+      <div class="form-grid">
+        <div class="field-group">
+          <label for="coursId">Cours cible</label>
+          <select id="coursId" class="select-field" formControlName="coursId">
+            <option *ngFor="let course of cours" [value]="course.id">{{ course.titre }}</option>
+          </select>
+          <span class="field-error" *ngIf="quizForm.get('coursId')?.touched && quizForm.get('coursId')?.invalid">
+            Choisis un cours partage avant d ajouter le quiz.
+          </span>
+        </div>
+
+        <div class="field-group">
+          <label for="quizTitre">Titre du quiz</label>
+          <input id="quizTitre" class="input-field" formControlName="quizTitre" />
+          <span class="field-error" *ngIf="quizForm.get('quizTitre')?.touched && quizForm.get('quizTitre')?.invalid">
+            Le titre du quiz doit contenir au moins 3 caracteres.
+          </span>
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div class="field-group">
+          <label for="quizDescription">Description</label>
+          <textarea id="quizDescription" class="textarea-field" formControlName="quizDescription"></textarea>
+          <span class="hint-text">Optionnel</span>
+        </div>
+
+        <div class="field-group field-group--stack">
+          <div class="field-group">
+            <label for="durationMinutes">Duree</label>
+            <input id="durationMinutes" class="input-field" type="number" formControlName="durationMinutes" />
+            <span
+              class="field-error"
+              *ngIf="quizForm.get('durationMinutes')?.touched && quizForm.get('durationMinutes')?.invalid"
+            >
+              La duree doit etre superieure a 0.
+            </span>
+          </div>
+          <div class="field-group">
+            <label for="passingScore">Seuil de reussite</label>
+            <input id="passingScore" class="input-field" type="number" formControlName="passingScore" />
+            <span
+              class="field-error"
+              *ngIf="quizForm.get('passingScore')?.touched && quizForm.get('passingScore')?.invalid"
+            >
+              Le seuil de reussite doit etre valide.
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="question-stack" formArrayName="questions">
+        <article class="question-card" *ngFor="let question of questions.controls; let i = index" [formGroupName]="i">
+          <div class="question-card__head">
+            <h3>Question {{ i + 1 }}</h3>
+            <button class="btn-ghost" type="button" (click)="removeQuestion(i)">Retirer</button>
+          </div>
+
+          <div class="field-group">
+            <label>Enonce</label>
+            <textarea class="textarea-field" formControlName="label"></textarea>
+            <span class="field-error" *ngIf="question.get('label')?.touched && question.get('label')?.invalid">
+              L enonce doit contenir au moins 5 caracteres.
+            </span>
+          </div>
+
+          <div class="field-group">
+            <label>Explication</label>
+            <textarea class="textarea-field" formControlName="explication"></textarea>
+            <span class="hint-text">Optionnel</span>
+          </div>
+
+          <div class="field-group">
+            <label>Points</label>
+            <input class="input-field" type="number" formControlName="points" />
+          </div>
+
+          <div class="form-grid">
+            <div class="field-group">
+              <label>Option A</label>
+              <input class="input-field" formControlName="optionA" />
+            </div>
+            <div class="field-group">
+              <label>Option B</label>
+              <input class="input-field" formControlName="optionB" />
+            </div>
+            <div class="field-group">
+              <label>Option C</label>
+              <input class="input-field" formControlName="optionC" />
+            </div>
+            <div class="field-group">
+              <label>Option D</label>
+              <input class="input-field" formControlName="optionD" />
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label>Bonne reponse</label>
+            <select class="select-field" formControlName="correctOption">
+              <option value="A">Option A</option>
+              <option value="B">Option B</option>
+              <option value="C">Option C</option>
+              <option value="D">Option D</option>
+            </select>
+          </div>
+        </article>
+      </div>
+
+      <div class="actions-row">
+        <button class="btn-secondary" type="button" (click)="addQuestion()">Ajouter une question</button>
+        <button class="btn" type="button" [disabled]="isPublishingQuiz" (click)="publishQuiz()">
+          {{ isPublishingQuiz ? 'Publication...' : 'Publier le quiz' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</section>

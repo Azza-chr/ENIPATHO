@@ -1,0 +1,69 @@
+<section class="course-reader">
+  <aside class="course-sidebar">
+    <div class="course-sidebar__head">
+      <button class="btn-secondary" type="button" (click)="retour()">Retour</button>
+      @if (module) {
+        <span>Module {{ module.ordre }}</span>
+        <h2>{{ module.titre }}</h2>
+      }
+    </div>
+
+    <div class="course-list">
+      @for (c of cours; track c.idCoursFormation; let i = $index) {
+        <button class="course-step" type="button" [class.is-active]="indexActif === i" (click)="selectCours(c, i)">
+          <strong>{{ i + 1 }}</strong>
+          <span>{{ c.titre }}</span>
+        </button>
+      }
+    </div>
+
+    <div class="course-sidebar__progress">
+      <div>
+        <span>Progression</span>
+        <strong>{{ indexActif + 1 }}/{{ cours.length || 0 }}</strong>
+      </div>
+      <div class="progress-track">
+        <span [style.width.%]="progress"></span>
+      </div>
+    </div>
+  </aside>
+
+  <main class="course-content">
+    @if (isLoading) {
+      <div class="reader-state">
+        <h3>Chargement du module</h3>
+        <p>Preparation des cours.</p>
+      </div>
+    }
+
+    @if (!isLoading && coursActif) {
+      <header class="course-content__head">
+        <span class="badge-chip">Cours {{ indexActif + 1 }}</span>
+        <h1>{{ coursActif.titre }}</h1>
+      </header>
+
+      <article class="course-article">
+        <p>{{ coursActif.contenu }}</p>
+      </article>
+
+      <footer class="course-actions">
+        <button class="btn-secondary" type="button" (click)="precedent()" [disabled]="indexActif === 0">
+          Precedent
+        </button>
+        <span>{{ indexActif + 1 }} sur {{ cours.length }}</span>
+        @if (indexActif < cours.length - 1) {
+          <button class="btn" type="button" (click)="suivant()">Suivant</button>
+        } @else {
+          <button class="btn" type="button" (click)="retour()">Terminer le module</button>
+        }
+      </footer>
+    }
+
+    @if (!isLoading && !coursActif) {
+      <div class="reader-state">
+        <h3>Aucun cours disponible</h3>
+        <p>Ajoutez des cours a ce module dans la base de donnees.</p>
+      </div>
+    }
+  </main>
+</section>

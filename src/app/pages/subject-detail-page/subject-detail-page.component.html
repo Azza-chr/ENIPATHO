@@ -1,0 +1,119 @@
+<!-- Role: student subject detail page with PDF courses and quiz access. -->
+<section class="page-shell">
+
+  <div class="subject-hero" *ngIf="matiere && !isLoading && !errorMessage">
+    <div class="subject-hero__avatar">{{ matiere.nom.charAt(0) }}</div>
+
+    <div class="subject-hero__content">
+      <div class="meta-row">
+        <span class="meta-chip">Professeur certifie</span>
+        <span class="meta-chip">{{ matiere.semestreLibelle || ('Semestre ' + matiere.semestreId) }}</span>
+      </div>
+
+      <h1>{{ matiere.nom }}</h1>
+      <p class="subject-hero__teacher">par {{ matiere.enseignant || 'Enseignant non renseigne' }}</p>
+
+      <div class="subject-hero__stats">
+        <span>{{ cours.length }} cours PDF</span>
+        <span>{{ quizCount }} quiz</span>
+        <span>{{ resourceCount }} ressources</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="state-card" *ngIf="isLoading">
+    <h3>Chargement de la matiere</h3>
+    <p>Les cours PDF, les chapitres et les quiz sont en cours de preparation.</p>
+  </div>
+
+  <div class="state-card" *ngIf="!isLoading && errorMessage">
+    <h3>Acces indisponible</h3>
+    <p class="error-text">{{ errorMessage }}</p>
+  </div>
+
+  <section class="section-block" *ngIf="!isLoading && !errorMessage && matiere">
+    <h2 class="section-title">Cours disponibles</h2>
+    <p class="section-subtitle">{{ matiere.description }}</p>
+
+    <div class="chapter-grid" *ngIf="cours.length > 0; else noCours">
+      <article class="content-card chapter-card" *ngFor="let item of cours; trackBy: trackCours">
+        <div class="chapter-card__head">
+          <div>
+            <h3>{{ item.titre }}</h3>
+            <p>{{ item.description }}</p>
+          </div>
+          <span class="chapter-card__number">PDF</span>
+        </div>
+
+        <div class="resource-stack">
+          <div class="resource-row">
+            <div class="resource-row__icon">PDF</div>
+            <div class="resource-row__content">
+              <strong>{{ item.originalFileName }}</strong>
+              <span>{{ item.fileSize ? ((item.fileSize / 1024 / 1024).toFixed(2) + ' Mo') : 'Fichier disponible' }}</span>
+            </div>
+            <div class="resource-row__actions">
+              <a class="btn-ghost" [href]="item.viewUrl" target="_blank" rel="noopener">Lire</a>
+              <a class="btn-secondary" [href]="item.downloadUrl">Telecharger</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="chapter-card__footer">
+          <div>
+            <strong>{{ item.quizId ? 'Quiz disponible' : 'Quiz a venir' }}</strong>
+            <span>{{ item.createdAt ? ('Publie le ' + (item.createdAt | date: 'dd/MM/yyyy HH:mm')) : 'Cours publie' }}</span>
+          </div>
+
+          <a class="btn" *ngIf="item.quizId" [routerLink]="['/etudiant/quizzes', item.quizId]">Passer le quiz</a>
+        </div>
+      </article>
+    </div>
+
+    <ng-template #noCours>
+      <div class="state-card">
+        <h3>Aucun cours PDF visible</h3>
+        <p>L enseignant n a pas encore publie de PDF pour cette matiere.</p>
+      </div>
+    </ng-template>
+  </section>
+
+  <section class="section-block" *ngIf="chapitres.length > 0">
+    <h2 class="section-title">Contenu academique existant</h2>
+    <p class="section-subtitle">Les chapitres deja presents dans le backend restent aussi accessibles.</p>
+
+    <div class="chapter-grid">
+      <article class="content-card chapter-card" *ngFor="let chapitre of chapitres; trackBy: trackChapitre">
+        <div class="chapter-card__head">
+          <div>
+            <h3>{{ chapitre.titre }}</h3>
+            <p>{{ chapitre.description }}</p>
+          </div>
+          <span class="chapter-card__number">{{ chapitre.ordre | number: '2.0' }}</span>
+        </div>
+
+        <div class="resource-stack" *ngIf="chapitre.ressources.length > 0">
+          <div class="resource-row" *ngFor="let ressource of chapitre.ressources">
+            <div class="resource-row__icon">PDF</div>
+            <div class="resource-row__content">
+              <strong>{{ ressource.titre }}</strong>
+              <span>{{ ressource.description || ressource.type }}</span>
+            </div>
+            <div class="resource-row__actions">
+              <a class="btn-ghost" *ngIf="ressource.url" [href]="ressource.url" target="_blank" rel="noopener">Lire</a>
+              <a class="btn-secondary" *ngIf="ressource.url" [href]="ressource.url">Telecharger</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="chapter-card__footer">
+          <div>
+            <strong>{{ chapitre.quiz?.titre || 'Quiz du chapitre' }}</strong>
+            <span>{{ chapitre.quiz?.durationMinutes || 0 }} min - seuil {{ chapitre.quiz?.passingScore || 50 }}%</span>
+          </div>
+          <a class="btn" *ngIf="chapitre.quizId" [routerLink]="['/etudiant/chapitres', chapitre.id, 'quiz']">Passer le quiz</a>
+        </div>
+      </article>
+    </div>
+  </section>
+</section>

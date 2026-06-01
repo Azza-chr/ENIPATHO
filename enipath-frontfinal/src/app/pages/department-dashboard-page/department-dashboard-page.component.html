@@ -1,0 +1,104 @@
+<section class="page-shell">
+  <header class="page-head">
+    <div class="page-head__copy">
+      <span class="page-head__eyebrow">{{ isStatisticsView ? 'Statistiques departement' : 'Dashboard departement' }}</span>
+      <h1 class="page-head__title">
+        {{ isStatisticsView ? 'Analyse des groupes et classes' : 'Bonjour ' + (session?.fullName || 'Chef de departement') }}
+      </h1>
+      <p class="page-head__subtitle">
+        {{ isStatisticsView
+          ? 'Comparez les performances par groupe, les effectifs et le taux de reussite.'
+          : 'Gardez une vision claire des messages, annonces et signaux importants du departement.' }}
+      </p>
+    </div>
+  </header>
+
+  <div class="state-card" *ngIf="isLoading">
+    <h3>Chargement du pilotage</h3>
+    <p>Les donnees par classes et les canaux de coordination se preparent.</p>
+  </div>
+
+  <ng-container *ngIf="overview as data">
+    <section class="dashboard-stat-grid">
+      <article class="content-card stat-card" *ngFor="let stat of data.stats">
+        <span>{{ stat.label }}</span>
+        <strong>{{ stat.value }}</strong>
+        <p>{{ stat.detail }}</p>
+      </article>
+    </section>
+
+    <ng-container *ngIf="!isStatisticsView">
+      <section class="dashboard-grid">
+        <article class="section-card">
+          <h2 class="section-title">Messages professeurs</h2>
+          <div class="feed-list">
+            <div class="feed-item" *ngFor="let item of data.inbox">
+              <strong>{{ item.title }}</strong>
+              <p>{{ item.description }}</p>
+              <span>{{ item.meta }}</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="section-card">
+          <h2 class="section-title">Annonces departementales</h2>
+          <div class="feed-list feed-list--scroll">
+            <div class="feed-item" *ngFor="let item of data.announcements">
+              <strong>{{ item.title }}</strong>
+              <p>{{ item.description }}</p>
+              <span>{{ item.meta }}</span>
+            </div>
+          </div>
+        </article>
+      </section>
+    </ng-container>
+
+    <ng-container *ngIf="isStatisticsView">
+      <app-dashboard-charts [charts]="data.charts" />
+
+      <section class="dashboard-grid">
+        <article class="section-card">
+          <h2 class="section-title">Progression par groupe</h2>
+          <p class="section-subtitle" *ngIf="data.groupStats.length === 0">
+            Les statistiques par groupe apparaitront ici sans afficher les details des etudiants.
+          </p>
+          <div class="progress-list">
+            <div class="progress-item" *ngFor="let item of data.classStats">
+              <div class="progress-item__head">
+                <strong>{{ item.label }}</strong>
+                <span>{{ item.progress }}%</span>
+              </div>
+              <div class="progress-item__track">
+                <span [style.width.%]="item.progress"></span>
+              </div>
+              <small>{{ item.detail }}</small>
+            </div>
+          </div>
+        </article>
+
+        <article class="section-card" *ngIf="data.groupStats.length > 0">
+          <h2 class="section-title">Synthese des groupes</h2>
+          <div class="group-stat-grid">
+            <article class="group-stat-card" *ngFor="let group of data.groupStats">
+              <strong>Niveau {{ group.niveau || '-' }} - Groupe {{ group.grp }}</strong>
+              <dl>
+                <div>
+                  <dt>Effectif</dt>
+                  <dd>{{ group.studentCount }}/30</dd>
+                </div>
+                <div>
+                  <dt>Score moyen</dt>
+                  <dd>{{ group.averageScore }}%</dd>
+                </div>
+                <div>
+                  <dt>Taux de reussite</dt>
+                  <dd>{{ group.passRate }}%</dd>
+                </div>
+              </dl>
+            </article>
+          </div>
+        </article>
+      </section>
+    </ng-container>
+  </ng-container>
+</section>

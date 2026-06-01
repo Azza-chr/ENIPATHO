@@ -1,0 +1,107 @@
+<section class="page-shell exam-page">
+  <button class="btn-secondary back-button" type="button" (click)="retour()">Retour a la formation</button>
+
+  @if (isLoading) {
+    <div class="state-card">
+      <h3>Chargement de l'examen</h3>
+      <p>Les questions sont en preparation.</p>
+    </div>
+  }
+
+  @if (!isLoading && !termine) {
+    <header class="exam-head">
+      <div>
+        <span class="page-head__eyebrow">Evaluation certifiante</span>
+        <h1>Examen de validation</h1>
+        <p>Question {{ questionActuelle + 1 }} sur {{ questions.length }}</p>
+      </div>
+      <div class="exam-head__counter">
+        <strong>{{ answeredCount }}/{{ questions.length }}</strong>
+        <span>reponses</span>
+      </div>
+    </header>
+
+    <div class="exam-progress">
+      <span [style.width.%]="progress"></span>
+    </div>
+
+    @if (errorMessage) {
+      <p class="exam-error">{{ errorMessage }}</p>
+    }
+
+    @if (questions.length === 0) {
+      <div class="state-card">
+        <h3>Aucune question disponible</h3>
+        <p>Ajoutez des questions au quiz pour tester l'examen.</p>
+      </div>
+    }
+
+    @if (questions.length > 0 && questionCourante) {
+      <article class="exam-card">
+        <div class="exam-card__question">
+          <span>{{ questionActuelle + 1 }}</span>
+          <h2>{{ questionCourante.enonce }}</h2>
+        </div>
+
+        <div class="answer-grid">
+          @for (reponse of getToutesReponses(); track reponse) {
+            <button
+              class="answer-option"
+              type="button"
+              [class.is-selected]="reponses[questionCourante.idQuestion] === reponse"
+              (click)="selectionnerReponse(questionCourante.idQuestion, reponse)"
+            >
+              {{ reponse }}
+            </button>
+          }
+        </div>
+      </article>
+
+      <footer class="exam-actions">
+        <button class="btn-secondary" type="button" (click)="questionPrecedente()" [disabled]="questionActuelle === 0">
+          Precedent
+        </button>
+
+        @if (questionActuelle < questions.length - 1) {
+          <button class="btn" type="button" (click)="questionSuivante()">Question suivante</button>
+        } @else {
+          <button class="btn" type="button" (click)="soumettre()">Soumettre l'examen</button>
+        }
+      </footer>
+    }
+  }
+
+  @if (!isLoading && termine && resultat) {
+    <article class="result-card" [class.is-success]="resultat.valide">
+      <span class="result-card__mark">{{ resultat.valide ? 'OK' : 'Retry' }}</span>
+      <h1>{{ resultat.valide ? 'Felicitations !' : 'Continuez vos efforts' }}</h1>
+      <p>{{ resultat.message }}</p>
+
+      <div class="result-stats">
+        <div>
+          <strong>{{ resultat.scoreObtenu }}%</strong>
+          <span>Score obtenu</span>
+        </div>
+        <div>
+          <strong>{{ resultat.bonnesReponses }}/{{ resultat.totalQuestions }}</strong>
+          <span>Bonnes reponses</span>
+        </div>
+        <div>
+          <strong>{{ resultat.scoreMinimum }}%</strong>
+          <span>Score minimum</span>
+        </div>
+      </div>
+
+      @if (resultat.certification) {
+        <div class="certification-box">{{ resultat.certification }}</div>
+      }
+
+      <div class="result-actions">
+        <button class="btn-secondary" type="button" (click)="retour()">Retour</button>
+        @if (!resultat.valide) {
+          <button class="btn" type="button" (click)="recommencer()">Repasser l'examen</button>
+        }
+      </div>
+    </article>
+  }
+</section>

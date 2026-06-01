@@ -1,0 +1,59 @@
+
+.result-card {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.result-card.is-success {
+  border-color: rgba(25, 135, 84, 0.22);
+  background: linear-gradient(180deg, rgba(25, 135, 84, 0.08), #fff);
+}
+
+.result-card.is-failure {
+  border-color: rgba(214, 69, 69, 0.2);
+  background: linear-gradient(180deg, rgba(214, 69, 69, 0.08), #fff);
+}
+
+.result-card__hero h2,
+.result-box strong,
+.result-box span {
+  display: block;
+}
+
+.result-card__hero h2 {
+  margin: 12px 0 0;
+  font-size: 3.2rem;
+}
+
+.result-card__pill {
+  display: inline-flex;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: var(--surface-soft);
+  color: var(--text-color);
+  font-weight: 800;
+}
+
+.result-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.result-box {
+  padding: 20px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid var(--border-color);
+}
+
+.result-box strong {
+  margin-bottom: 10px;
+  color: var(--muted-color);
+}
+
+.result-box span {
+  font-size: 2.1rem;
+  font-weight: 800;
+}

@@ -1,0 +1,148 @@
+/* Role: styling for the department head dashboard page. */
+.dashboard-stat-grid,
+.dashboard-grid,
+.feed-grid {
+  display: grid;
+  gap: 18px;
+}
+
+.dashboard-stat-grid {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  perspective: 1000px;
+}
+
+.dashboard-grid {
+  margin-top: 22px;
+  grid-template-columns: 1fr 1fr;
+}
+
+.stat-card span,
+.stat-card strong,
+.stat-card p,
+.feed-item strong,
+.feed-item p,
+.feed-item span {
+  display: block;
+}
+
+.stat-card span,
+.feed-item span {
+  color: var(--muted-color);
+}
+
+.stat-card strong {
+  margin-top: 14px;
+  font-size: 2.35rem;
+}
+
+.stat-card {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(145deg, var(--surface-color), var(--surface-soft));
+}
+
+.stat-card::after {
+  content: '';
+  position: absolute;
+  inset: auto 18px 0 auto;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: rgba(52, 211, 153, 0.12);
+  transform: translateY(34px);
+}
+
+.stat-card p,
+.feed-item p {
+  margin: 10px 0 0;
+  color: var(--muted-color);
+  line-height: 1.7;
+}
+
+.feed-list,
+.progress-list {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.feed-list--scroll {
+  max-height: 360px;
+  overflow-y: auto;
+  padding-right: 8px;
+  scrollbar-gutter: stable;
+}
+
+.feed-item {
+  padding: 18px;
+  border-radius: 8px;
+  border: 1px solid rgba(100, 116, 139, 0.16);
+  background: color-mix(in srgb, var(--surface-soft) 88%, transparent);
+}
+
+.progress-item__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.progress-item__head span,
+.progress-item small {
+  color: var(--muted-color);
+}
+
+.progress-item__track {
+  height: 10px;
+  margin: 10px 0 8px;
+  border-radius: 999px;
+  background: var(--surface-accent);
+  overflow: hidden;
+}
+
+.progress-item__track span {
+  display: block;
+  height: 100%;
+  background: var(--brand-gradient);
+}
+
+.feed-grid {
+  margin-top: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.group-stat-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  margin-top: 18px;
+}
+
+.group-stat-card {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  border-radius: 8px;
+  border: 1px solid rgba(100, 116, 139, 0.16);
+  background: color-mix(in srgb, var(--surface-soft) 88%, transparent);
+}
+
+.group-stat-card dl {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.group-stat-card dt {
+  color: var(--muted-color);
+}
+
+.group-stat-card dd {
+  margin: 4px 0 0;
+  font-weight: 800;
+}
+
+@media (max-width: 940px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}

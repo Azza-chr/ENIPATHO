@@ -1,0 +1,56 @@
+<div class="page-container">
+
+  <header class="page-head library-hero">
+    <div class="page-head__copy">
+      <span class="page-head__eyebrow">Catalogue des formations</span>
+      <h1 class="page-head__title">Formations disponibles</h1>
+      <p class="page-head__subtitle">Développez vos compétences dans les domaines tendances</p>
+    </div>
+  </header>
+
+  @if (formations.length === 0) {
+    <div class="card" style="text-align:center; padding: 60px;">
+      <p style="color: var(--text-secondary); font-size: 18px;">Aucune formation disponible pour le moment.</p>
+    </div>
+  }
+
+  <div class="formations-grid">
+    @for (f of formations; track f.idFormation) {
+      <div class="card" style="cursor:pointer;" (click)="voirDetail(f.idFormation)">
+
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px;">
+          <span class="badge badge-orange">{{ f.domaine }}</span>
+          <span class="badge badge-blue">{{ f.niveau }}</span>
+        </div>
+
+        <h3 style="font-size:18px; font-weight:600; margin-bottom:10px; color: var(--text-primary);">
+          {{ f.titre }}
+        </h3>
+
+        <p style="color: var(--text-secondary); font-size:14px; margin-bottom:20px; line-height:1.6;">
+          {{ f.description }}
+        </p>
+
+        <div style="display:flex; gap:20px; margin-bottom:20px;">
+          <div style="text-align:center;">
+            <div style="font-size:20px; font-weight:700; color: var(--accent-orange);">{{ f.duree }}h</div>
+            <div style="font-size:12px; color: var(--text-muted);">Durée</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:20px; font-weight:700; color: var(--accent-orange);">{{ f.scoreMin }}%</div>
+            <div style="font-size:12px; color: var(--text-muted);">Score min</div>
+          </div>
+        </div>
+
+        <div class="progress-bar" style="margin-bottom:20px;">
+          <div class="progress-fill" style="width: 0%"></div>
+        </div>
+
+        <button class="btn-primary" style="width:100%;" (click)="voirDetail(f.idFormation)">
+          Commencer la formation →
+        </button>
+      </div>
+    }
+  </div>
+
+</div>
